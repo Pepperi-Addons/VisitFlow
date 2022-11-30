@@ -1,0 +1,18 @@
+<div class="flow-container">
+    <div class="flow-groups">
+        <ng-container *ngFor="let group of groups">
+            <ng-container *ngIf="group.activities | groupStatusIcon as statusIconName">
+                <pep-button class="visit-item group"
+                    [ngClass]="{'selected': selectedGroup === group, 'color-alert': statusIconName === 'system_alert'}"
+                    [value]="group.name" styleType="regular" sizeType="md" [disabled]="group.Status === 'Submitted'"
+                    [iconName]="statusIconName" iconPosition="start" (buttonClick)="onGroupClicked(group)"></pep-button>
+            </ng-container>
+        </ng-container>
+    </div>
+    <div class="group-activities" *ngIf="selectedGroup">
+        <pep-button *ngFor="let activity of selectedGroup.activities" class="visit-item activity"
+            [value]="activity.Title" styleType="regular" sizeType="md" [disabled]="activity.Status === 'Submitted'"
+            [iconName]="activity | activityStatusIcon" iconPosition="start" (buttonClick)="onActivityClicked(activity)">
+        </pep-button>
+    </div>
+</div>

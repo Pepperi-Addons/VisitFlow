@@ -2,15 +2,15 @@ import { DoBootstrap, Injector, NgModule, Type } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
-import { PepAddonService } from '@pepperi-addons/ngx-lib';
+import { PepAddonService, PepNgxLibModule } from '@pepperi-addons/ngx-lib';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app.routes';
 
-import { SettingsComponent, SettingsModule } from './settings';
+//import { SettingsComponent, SettingsModule } from './settings';
 
-// import { BlockModule, BlockComponent } from './block';
-// import { BlockEditorModule, BlockEditorComponent } from './block-editor';
+import { VisitFlowModule, VisitFlowComponent } from './visit-flow';
+import { VisitFlowEditorModule, VisitFlowEditorComponent } from './visit-flow-editor';
 
 import { config } from './app.config';
 
@@ -20,9 +20,10 @@ import { config } from './app.config';
     ],
     imports: [
         BrowserModule,
-        // BlockModule,
-        // BlockEditorModule,
-        SettingsModule,
+        VisitFlowModule,
+        VisitFlowEditorModule,
+        //SettingsModule,
+        PepNgxLibModule,
         TranslateModule.forRoot({
             loader: {
                 provide: TranslateLoader,
@@ -48,10 +49,9 @@ export class AppModule implements DoBootstrap {
     }
 
     ngDoBootstrap() {
-        this.pepAddonService.defineCustomElement(`settings-element-${config.AddonUUID}`, SettingsComponent, this.injector);
-
-        // this.pepAddonService.defineCustomElement(`block-element-${config.AddonUUID}`, BlockComponent, this.injector);
-        // this.pepAddonService.defineCustomElement(`block-editor-element-${config.AddonUUID}`, BlockEditorComponent, this.injector);
+        //this.pepAddonService.defineCustomElement(`settings-element-${config.AddonUUID}`, AppComponent, this.injector);
+        this.pepAddonService.defineCustomElement(`block-element-${config.AddonUUID}`, VisitFlowComponent, this.injector);
+        this.pepAddonService.defineCustomElement(`block-editor-element-${config.AddonUUID}`, VisitFlowEditorComponent, this.injector);
     }
 }
 

@@ -1,0 +1,13 @@
+@use '@pepperi-addons/ngx-lib/src/core/style/abstracts/variables';
+
+.editor-container {
+    margin-top: variables.$spacing-lg;
+
+    .editor-desc { 
+        font-size: variables.$fs-xs;
+    }
+
+    .udc-flows { 
+        margin-top: variables.$spacing-lg; 
+    }
+}

@@ -1,0 +1,28 @@
+@use '@pepperi-addons/ngx-lib/src/core/style/abstracts/variables';
+
+.flow-container {
+    display: flex;
+    height: 100%;
+
+    .flow-groups, .group-activities {
+        display: flex;
+        flex-direction: column;
+        gap: variables.$spacing-lg;
+        padding: variables.$spacing-lg;
+    }
+
+    .flow-groups {
+        width: 320px;
+    }    
+
+    .group-activities {
+       background-color: lightgray;
+       width: 364px;
+    }
+    
+    pep-button {        
+        ::ng-deep.mat-button-wrapper {
+            justify-content: start;
+        }                
+    }
+}

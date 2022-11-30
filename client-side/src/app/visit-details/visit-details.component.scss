@@ -1,0 +1,80 @@
+@use '@pepperi-addons/ngx-lib/src/core/style/abstracts/variables';
+@use '@pepperi-addons/ngx-lib/src/core/style/abstracts/mixins';
+
+.flow-container {
+    /*height: 100%;*/
+    display: flex;
+    gap: variables.$spacing-lg;    
+    margin: variables.$spacing-2xl variables.$spacing-lg variables.$spacing-lg variables.$spacing-lg;
+
+    .flow-groups, .group-activities {
+        display: flex;
+        flex-direction: column;
+        gap: variables.$spacing-lg;
+        /*padding: variables.$spacing-lg;       */
+
+        .visit-item {
+            height: 64px;
+
+            ::ng-deep.mat-button {
+                height: 100%;
+                font-size: variables.$fs-xl;
+                font-weight: 600;
+
+                .mat-icon {
+                    width: 32px;
+                }
+
+                &:disabled {
+                    font-weight: normal;
+                }                               
+
+                &:hover {
+                    @include mixins.focus();                             
+                }                 
+            }
+
+            &.group {
+                width: 343px;
+            }
+
+            &.activity {
+                width: 411px;
+            }
+            
+            
+            &.selected {
+                ::ng-deep.mat-button {
+                    @include mixins.pep-state-active(regular, null, true);  
+                    
+
+                    &:hover {
+                        @include mixins.focus();                            
+                    } 
+                }               
+            } 
+
+            &.color-alert {
+                ::ng-deep.mat-button {
+                    .mat-icon {
+                        .svg-icon {
+                            fill: rgba(230, 0, 0, 0.9);
+                        }
+                    }
+                }
+            }
+        }
+    }    
+
+    .group-activities {
+       background-color: lightgray;
+       /*width: 364px; */
+       padding: variables.$spacing-lg;
+    }
+    
+    pep-button {        
+        ::ng-deep.mat-button-wrapper {
+            justify-content: start;
+        }                
+    }
+}

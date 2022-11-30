@@ -27,6 +27,13 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 }
 
 export async function upgrade(client: Client, request: Request): Promise<any> {
+    try {
+        const service = new RelationsService(client);
+        await service.upsertRelations();
+    } catch (err) {
+        throw new Error(`Failed to create relations. error - ${err}`);
+    }
+    
     return {success:true,resultObject:{}}
 }
 

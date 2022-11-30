@@ -1,34 +1,28 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { TranslateLoader, TranslateModule, TranslateService, TranslateStore } from '@ngx-translate/core';
 
 import { PepAddonService } from '@pepperi-addons/ngx-lib';
+import { PepSelectModule } from '@pepperi-addons/ngx-lib/select';
 
-import { BlockEditorComponent } from './index';
+import { VisitFlowEditorComponent } from './index';
 
 import { config } from '../app.config';
 
 @NgModule({
-    declarations: [BlockEditorComponent],
+    declarations: [VisitFlowEditorComponent],
     imports: [
         CommonModule,
-        TranslateModule.forChild({
-            loader: {
-                provide: TranslateLoader,
-                useFactory: (addonService: PepAddonService) => 
-                    PepAddonService.createMultiTranslateLoader(config.AddonUUID, addonService, ['ngx-lib', 'ngx-composite-lib']),
-                deps: [PepAddonService]
-            }, isolate: false
-        }),
+        TranslateModule.forChild(),
+        PepSelectModule
     ],
-    exports: [BlockEditorComponent],
+    exports: [VisitFlowEditorComponent],
     providers: [
         TranslateStore,
         // Add here all used services.
     ]
 })
-export class BlockEditorModule {
+export class VisitFlowEditorModule {
     constructor(
         translate: TranslateService,
         private pepAddonService: PepAddonService
