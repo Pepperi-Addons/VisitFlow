@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AppService } from '../app.service';
-import { map } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 
 @Injectable({
@@ -11,14 +11,18 @@ export class VisitFlowEditorService {
 
     }
 
+    //TODO - get scheme name from shared folder
     loadFlows() {
         return this._appService.getPapiCall('/user_defined_collections/schemes').pipe(
-            map(collections => collections.map(collection => {
-                return {
-                    key: collection.Name,
-                    value: collection.Name
-                }
-            })) 
+            map(collections => collections
+                .filter(collection => collection.Extends?.Name === 'VisitFlows')
+                .map(collection => {
+                    console.log('collection', collection);
+                    return {
+                        key: collection.Name,
+                        value: collection.Name
+                    }
+                }))
         );
     }
 }

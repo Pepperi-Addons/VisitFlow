@@ -1,106 +1,143 @@
 import _ from 'lodash';
 
-class VisitFlowService {
-    private _activities: any[] = [];
+interface IVisitFlowActivity {
+    Group: string;
+    ActivityType: number;
+    ActivityData?: {};
+    Title: string;
+    Mandatory: boolean;
+    Disabled?: boolean;
+    Completed: string;
+    Status: string;
+    DepandsOnStep?: number;
+}
 
-    constructor() {
-        this.loadActivities();
+class VisitFlowService {    
+    private _collectionName = '';
+    private _activeFlows: any[] = [];
+    private _activities: any[] = [];
+    private _transactions: any[] = [];
+    private _serveys: any[] = [];
+
+    constructor(name: string) {
+        // this.loadActivities();
+        this._collectionName = name;
 
     }
 
-    private loadActivities() {
-        this._activities = [
-            {
-                group: 'Start',
-                id: 'GA311422',
-                order: 1,
-                objectType: 'GeneralActivity',
-                title: 'Start Visit',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Check',
-                id: 'GA12121',
-                order: 2,
-                objectType: 'GeneralActivity',
-                title: 'Complaiance',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Check',
-                id: 'GA23232',
-                order: 3,
-                objectType: 'GeneralActivity',
-                title: 'Complaiance Step 2',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Survey',
-                id: 'SRV11111',
-                order: 4,
-                objectType: 'Survey',
-                title: 'Survey 1',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Survey',
-                id: 'SRV22222',
-                order: 5,
-                objectType: 'Survey',
-                title: 'Survey 2',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Transactions',
-                id: 'OA343434',
-                order: 6,
-                objectType: 'Transaction',
-                title: 'Sales Order',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Transactions',
-                id: 'OA556565',
-                order: 7,
-                objectType: 'Transaction',
-                title: 'Coffee Order',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Returns',
-                id: 'OA767677',
-                order: 8,
-                objectType: 'Transaction',
-                title: 'Return',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
-            },
-            {
-                group: 'Returns',
-                id: 'OA898988',
-                order: 9,
-                objectType: 'Transaction',
-                title: 'Return 2',
-                isMandatory: true,
-                isEnabled: true,
-                status: 'inCreation'
+    async getFlows() {
+        let flows: any[] = [];
+
+        const res = await Promise.all([
+            pepperi.resources.resource(this._collectionName).get({ where: 'Active = true' }),
+            pepperi.api.activities.search({
+                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'/*, 'TSAFlowId', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'*/],
+                filter: {
+                    ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisWeek', Values: []
+                }
+            }),
+            pepperi.api.transactions.search({
+                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'/*, 'TSAFlowId', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'*/],
+                filter: {
+                    ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisWeek', Values: []
+                }
+            })
+        ]);
+        console.log('data', res);
+
+        debugger;
+
+        if (res?.length === 3) {
+
+            const activeFlows: any = res[0];
+            const activities: any = res[1];
+
+            //1 - get all active flows  
+            //2 - check that you have at least one active flow 
+            //3 - check that you have activities - if no just load the flow(s) with the steps
+            //3 - in the activities seatch for an active flow - for that you need only the startEndFlow activity
+            //3 - if found active - load it. else - show flows list (if only one found - load it)
+
+
+            //found active flows
+            if (activeFlows?.length) {
+                //search for start/end flow activities        
+                if (activities.success && activities.objects?.length) {
+                    const strtEndActivities = activities.objects.filter(activity => activity.TSAFlowId);
+                    let foundStartEndActivity = false;
+                    for (let activity of strtEndActivities) {
+                        //TODO waiting for answers
+                        if (activity.TSAFlowId && activity.TSAStartVisitDateTime && !activity.TSAEndVisitDateTime) {
+                            //activity in progress - even of 
+                            const flowInProgress = activeFlows.find(flow => flow.UUID === activity.TSAFlowId);
+                            if (flowInProgress) {
+                                foundStartEndActivity = true;
+                                //load flow statuses from activities
+                                flows = this.createVisitFlows([flowInProgress], activities, true);
+                            }
+                        }
+                    }
+                    if (!foundStartEndActivity) {
+                        //just load the flow(s) with the steps
+                        flows = this.createVisitFlows(activeFlows);
+                    }
+                } else {
+                    //no activites - just load the flow(s) wish the steps
+                    flows = this.createVisitFlows(activeFlows);
+                }
+            } else {
+                //no flows at all
             }
-        ]
+
+        }
+
+        console.log('flows', flows);
+        return flows;
+
+    }
+
+    private createVisitFlows(flows: any[], activities: any[] = [], searchActivity = false) {
+        let visitFlows: any[] = [];                
+
+        for (let flow of flows) {
+            const steps = flow.steps;
+            let visitActivities: IVisitFlowActivity[] = []; 
+            for (let i = 0; i < steps.length; i++) {
+                visitActivities.push({
+                    Group: steps[i].Group,
+                    ActivityType: steps[i].ActivityType,
+                    Title: steps[i].Title,
+                    Mandatory: steps[i].Mandatory,
+                    Disabled: steps[i].Disabled === true,
+                    Status: this.getActivityStatus(activities, steps[0].ActivityType, searchActivity),
+                    Completed: steps[0].Completed
+                } as IVisitFlowActivity);          
+            }
+            visitFlows.push({
+                Key: flow.Key,
+                Name: flow.Name,
+                Title: flow.Description,
+                Activities: [...visitActivities]
+            });
+        }
+       
+        return visitFlows;
+    }
+
+    //check if there is an activity of the same type and return its status
+    private getActivityStatus(activities: any[], activityType: string, searchActivity: boolean): string {
+        let status = 'New';
+
+        if (!searchActivity) {
+            return status;
+        }
+
+        const activity = activities.find(activity => activity.ActivityTypeId === activityType);
+        if (activity) {
+            status = activity.StatusName;
+        }
+
+        return status;
     }
 
     //TEMP

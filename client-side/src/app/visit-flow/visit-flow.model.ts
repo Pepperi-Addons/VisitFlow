@@ -19,7 +19,7 @@ export interface IVisitFlowActivity {
     Catalog?: string;
     Title?: string;
     Mandatory: boolean;    
-    Enabled: boolean;   
+    Disabled: boolean;   
     Completed: string;
     Status: string;
     DepandsOnStep?: number;

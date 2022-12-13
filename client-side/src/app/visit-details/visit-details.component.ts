@@ -3,6 +3,7 @@ import { IVisitFlowActivityGroup, IVisitFlowActivity } from '../visit-flow/visit
 import { VisitDetailsService } from './visit-details.service';
 import { VisitFlowService } from '../visit-flow/visit-flow.service';
 
+
 @Component({
     selector: 'visit-details',
     templateUrl: './visit-details.component.html',
@@ -29,7 +30,7 @@ export class VisitDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-
+        
     }
 
     initGroups(list: IVisitFlowActivity[]) {

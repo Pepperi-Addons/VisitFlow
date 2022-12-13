@@ -4,11 +4,11 @@ import { IVisitFlowActivity } from '../../visit-flow/visit-flow.model';
 @Pipe({ name: 'activityStatusIcon' })
 export class ActivityStatusIcon implements PipeTransform {
     transform(activitiy: IVisitFlowActivity) {
-        if (!activitiy.Enabled) {
+        if (activitiy.Disabled) {
             return 'system_lock';
         }
-        if (activitiy.Mandatory) {
-            return 'system_alert';
+        if (activitiy.Mandatory && activitiy.Completed !== activitiy.Status) {
+            return 'system_must';
         }
         if (activitiy.Completed === activitiy.Status) {
             return 'system_ok';

@@ -3,6 +3,7 @@ import { IVisitFlow, IVisitFlowActivity, VisitFlowActivityType } from './visit-f
 import { AppService } from '../app.service';
 import _ from 'lodash';
 import { map, tap, catchError } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
@@ -48,15 +49,32 @@ export class VisitFlowService {
     }
 
     initUdcFlows(collection: string) {
+        const eventData = {
+            detail: {
+                eventKey: 'OnClientFlowsLoad',
+                eventData: {
+                    collection: collection
+                },
+                completion: (flows) => {
+                    console.log('flows loaded', flows);
+                }
+            }
+        }
+        const customEvent = new CustomEvent('emit-event', eventData);
+        window.dispatchEvent(customEvent); 
+        //temp        
         return this._appService.getPapiCall(`/user_defined_collections/${collection}`).pipe(
             map(flows => flows.map(flow => {
+                console.log('pre flow', flow);
                 return {
-                    name: flow.name,
-                    steps: JSON.parse(flow.flowSteps)
+                    key: flow.Key,
+                    name: flow.Name,                    
+                    steps: flow.steps
                 }
             })),
             tap(flows => {
                 this._collectionFlows = flows;
+                console.log('flows', flows);
                 if (flows?.length) {
                     //TODO check if there is an active flow
                     

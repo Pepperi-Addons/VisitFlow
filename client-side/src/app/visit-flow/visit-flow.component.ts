@@ -96,6 +96,7 @@ export class VisitFlowComponent implements OnInit {
 
     onFlowSelected(flow) {
         console.log('onFlowSelected', flow);
+        this._visitFlowService.selectedFlow = flow;
     }
 
     /*
