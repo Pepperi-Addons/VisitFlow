@@ -76,7 +76,12 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
 }
 
 export async function downgrade(client: Client, request: Request): Promise<any> {
-    return { success: true, resultObject: {} }
+    try {       
+        const service = new RelationsService(client);
+        await service.upsertRelations();
+    } catch (err) {
+        throw new Error(`Failed to upgrade addon. error - ${err}`);
+    }    
 }
 
 /*

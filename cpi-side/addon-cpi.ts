@@ -1,13 +1,14 @@
 import '@pepperi-addons/cpi-node';
 import VisitFlowService from './visit-flow-cpi.service';
 
-export async function load(configuration: any) {
-    pepperi.events.intercept('OnClientFlowsLoad' as any, {}, async (data): Promise<void> => {
-        
-        debugger;
-        data.collection = 'VisitFlows';
+export async function load(configuration: any) {   
+    pepperi.events.intercept('OnClientVisitsLoad' as any, {}, async (data, next, main): Promise<any> => {
+       // debugger;   
+        //data.collection = 'VisitFlows';
         const service = new VisitFlowService(data.collection);
-        return await service.getFlows() as any;
+        const visits = await service.getVisits();
+        //debugger;
+        return { visits: visits };
         //TODO                        
         //1 - get all active flows   
         //2 - get active flow - for that you need only the startEndFlow activity
@@ -18,7 +19,7 @@ export async function load(configuration: any) {
         // const flows = await pepperi.resources.resource(data.collection).get({});
         /*
         const activities = await pepperi.api.activities.search({
-            fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime', 'TSAFlowId', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'],
+            fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime', 'TSAFlowID', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'],
             filter: {
                 ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: []
             }            
@@ -46,8 +47,8 @@ export async function load(configuration: any) {
         //4 - get the group collection
 
 
-        const groups = service.getGroups();
-        return groups as any;
+        /*const groups = service.getGroups();
+        return groups as any; */
     });
 
     pepperi.events.intercept('OnClientVisitActivityClick' as any, {}, async (data): Promise<void> => {

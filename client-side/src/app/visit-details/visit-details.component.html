@@ -8,6 +8,10 @@
                     [iconName]="statusIconName" iconPosition="start" (buttonClick)="onGroupClicked(group)"></pep-button>
             </ng-container>
         </ng-container>
+        <ng-container *ngIf="showReturn">
+            <pep-button class="return-to-list" [value]="'Back'" styleType="regular" sizeType="md"
+                [iconName]="'arrow_left_alt'" iconPosition="start" (buttonClick)="onReturnClicked()"></pep-button>
+        </ng-container>
     </div>
     <div class="group-activities" *ngIf="selectedGroup">
         <pep-button *ngFor="let activity of selectedGroup.activities" class="visit-item activity"

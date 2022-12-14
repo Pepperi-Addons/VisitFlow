@@ -17,6 +17,8 @@ export class VisitDetailsComponent implements OnInit {
         this._visitDetailsService.initGroups(list);
     };
 
+    @Input() showReturn = false;
+
     get groups() {
         return this._visitDetailsService.groups;
     }
@@ -46,5 +48,9 @@ export class VisitDetailsComponent implements OnInit {
         console.log('onActivityClicked', activity);
         //TODO - check how to fetch the activity uuid
         this._visitFlowService.handleActivityClicked(activity);
+    }
+
+    onReturnClicked() {
+        this._visitFlowService.selectedFlow = null;
     }
 }

@@ -1,9 +1,10 @@
 @use '@pepperi-addons/ngx-lib/src/core/style/abstracts/variables';
 
-.flow-container {
+.visit-container {
     display: flex;
     height: 100%;
 
+    /*
     .flow-groups, .group-activities {
         display: flex;
         flex-direction: column;
@@ -24,5 +25,27 @@
         ::ng-deep.mat-button-wrapper {
             justify-content: start;
         }                
+    }*/
+
+    .visit-selection {
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 30px;
+        width: 100%;
+        margin: 30px;
+
+        pep-button {
+            height: 100px;
+            flex-basis: 200px;
+
+            ::ng-deep.mat-button {
+                height: 100%;
+
+                .mat-button-wrapper {
+                    justify-content: center;
+                }
+            }
+        }
     }
 }

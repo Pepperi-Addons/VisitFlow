@@ -32,9 +32,9 @@ export const VisitFlowTSAFields: ApiFieldObject[] = [
         Format: "DateTime"
     },
     {
-        FieldID: "TSAFlowId",
+        FieldID: "TSAFlowID",
         Label: "FlowId",
-        Description: "Flow Id",
+        Description: "Flow ID",
         IsUserDefinedField: true,
         UIType: {
             ID: 1,

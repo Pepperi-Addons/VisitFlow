@@ -15,9 +15,8 @@ export class VisitFlowEditorService {
     loadFlows() {
         return this._appService.getPapiCall('/user_defined_collections/schemes').pipe(
             map(collections => collections
-                .filter(collection => collection.Extends?.Name === 'VisitFlows')
-                .map(collection => {
-                    console.log('collection', collection);
+                .filter(collection => collection.Extends?.Name === 'visitFlows')
+                .map(collection => {                    
                     return {
                         key: collection.Name,
                         value: collection.Name

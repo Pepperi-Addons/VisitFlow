@@ -3,29 +3,47 @@ import { IVisitFlow, IVisitFlowActivity, VisitFlowActivityType } from './visit-f
 import { AppService } from '../app.service';
 import _ from 'lodash';
 import { map, tap, catchError } from 'rxjs/operators';
-import { forkJoin } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { PepAddonService } from '@pepperi-addons/ngx-lib';
+
 
 @Injectable({
     providedIn: 'root'
 })
 export class VisitFlowService {
-    private _collectionFlows: any[] = [];
-    private _selectedFlow: {};
+    private _flows = new BehaviorSubject<any[]>([]);
+    private _flows$ = this._flows.asObservable();
+    //private _collectionFlows: any[] = [];
+    private _visits: any[] = [];
+    private _selectedVisit: {} | null = null;
     private _visitFlow: any = {};
     private _flowId: string;
     private _flowGroups: any[] = [];
     private _selectedGroupActivities: any[] = [];
 
-    get flows() {
-        return this._collectionFlows;
+    //collectionFlow$ = this._collectionFlow$.asObservable();
+    /*get collectionFlows$(): Observable<any[]> {
+        return this._flows$;
+    }*/
+  
+    get visits() {
+        return this._visits;
+    }
+    
+    set visits(list: any[]) {
+        this._visits = list;
+    }
+
+    get flows$() {
+        return this._flows$;
     }
 
     set selectedFlow(value) {
-        this._selectedFlow = value;
+        this._selectedVisit = value;
     }
 
     get selectedFlow() {
-        return this._selectedFlow;
+        return this._selectedVisit;
     }
 
     set flowId(id: string) {
@@ -48,7 +66,29 @@ export class VisitFlowService {
         return this._selectedGroupActivities;
     }
 
-    initUdcFlows(collection: string) {
+    loadVisits(collection: string) {
+        console.log('loadVisits', collection);
+        //this._collectionFlows = [];
+        /*const eventData = {
+            detail: {
+                eventKey: 'OnClientVisitsLoad',
+                eventData: {
+                    collection: collection
+                },
+                completion: (flows) => {
+                    console.log('flows loaded 2', flows);
+                    //this._collectionFlows = flows;                    
+                    this._flows.next(flows);
+                }
+            }
+        }
+        const customEvent = new CustomEvent('emit-event', eventData);
+        window.dispatchEvent(customEvent);*/
+        //
+        return this._addonService.emitEvent('OnClientVisitsLoad', {
+            collection: collection
+        });
+        /*
         const eventData = {
             detail: {
                 eventKey: 'OnClientFlowsLoad',
@@ -56,13 +96,17 @@ export class VisitFlowService {
                     collection: collection
                 },
                 completion: (flows) => {
-                    console.log('flows loaded', flows);
+                    console.log('flows loaded 2', flows);
+                    //this._collectionFlows = flows;
+                    console.log('is array',Array.isArray(flows));
+                    this._flows.next(flows);
                 }
             }
         }
         const customEvent = new CustomEvent('emit-event', eventData);
-        window.dispatchEvent(customEvent); 
-        //temp        
+        window.dispatchEvent(customEvent); */
+        //temp      
+         /*
         return this._appService.getPapiCall(`/user_defined_collections/${collection}`).pipe(
             map(flows => flows.map(flow => {
                 console.log('pre flow', flow);
@@ -73,18 +117,18 @@ export class VisitFlowService {
                 }
             })),
             tap(flows => {
-                this._collectionFlows = flows;
+                //this._flows = flows;
                 console.log('flows', flows);
                 if (flows?.length) {
                     //TODO check if there is an active flow
                     
                 }
             }),
-            catchError(err => this._collectionFlows = [])
-        );
+           // catchError(err => this._collectionFlows = [])
+        ); */
     }
 
-    constructor(private _appService: AppService) {
+    constructor(private _appService: AppService, private _addonService: PepAddonService) {
         //temp - load from DB
         this.initFlow();
         //TEMP

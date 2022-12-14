@@ -2,8 +2,8 @@ import _ from 'lodash';
 
 interface IVisitFlowActivity {
     Group: string;
-    ActivityType: number;
-    ActivityData?: {};
+    ResourceType: 'Activity' | 'Transaction' | 'Survey';
+    ResourceTypeID: string;
     Title: string;
     Mandatory: boolean;
     Disabled?: boolean;
@@ -12,9 +12,9 @@ interface IVisitFlowActivity {
     DepandsOnStep?: number;
 }
 
-class VisitFlowService {    
+class VisitFlowService {
     private _collectionName = '';
-    private _activeFlows: any[] = [];
+    private _activeVisits: any[] = [];
     private _activities: any[] = [];
     private _transactions: any[] = [];
     private _serveys: any[] = [];
@@ -25,23 +25,24 @@ class VisitFlowService {
 
     }
 
-    async getFlows() {
-        let flows: any[] = [];
+    async getVisits() {
+        let visits: any[] = [];
 
-        const res = await Promise.all([
+        const res: any = await Promise.all([
             pepperi.resources.resource(this._collectionName).get({ where: 'Active = true' }),
             pepperi.api.activities.search({
-                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'/*, 'TSAFlowId', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'*/],
+                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'/*, 'TSAFlowID', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'*/],
                 filter: {
                     ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisWeek', Values: []
                 }
             }),
             pepperi.api.transactions.search({
-                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'/*, 'TSAFlowId', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'*/],
+                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'],
                 filter: {
                     ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisWeek', Values: []
                 }
             })
+            //TODO - fetch surveys
         ]);
         console.log('data', res);
 
@@ -49,8 +50,13 @@ class VisitFlowService {
 
         if (res?.length === 3) {
 
-            const activeFlows: any = res[0];
-            const activities: any = res[1];
+            this._activeVisits = res[0];
+            if (res[1].success && res[1].objects?.length) {
+                this._activities = res[1].objects;
+            }
+            if (res[2].success && res[2].objects?.length) {
+                this._transactions = res[2].objects;
+            }
 
             //1 - get all active flows  
             //2 - check that you have at least one active flow 
@@ -60,30 +66,30 @@ class VisitFlowService {
 
 
             //found active flows
-            if (activeFlows?.length) {
+            if (this._activeVisits?.length) {
                 //search for start/end flow activities        
-                if (activities.success && activities.objects?.length) {
-                    const strtEndActivities = activities.objects.filter(activity => activity.TSAFlowId);
+                if (this._activities.length) {
+                    const strtEndActivities = this._activities.filter(activity => activity.TSAFlowID);
                     let foundStartEndActivity = false;
                     for (let activity of strtEndActivities) {
                         //TODO waiting for answers
-                        if (activity.TSAFlowId && activity.TSAStartVisitDateTime && !activity.TSAEndVisitDateTime) {
+                        if (activity.TSAFlowID && activity.TSAStartVisitDateTime && !activity.TSAEndVisitDateTime) {
                             //activity in progress - even of 
-                            const flowInProgress = activeFlows.find(flow => flow.UUID === activity.TSAFlowId);
-                            if (flowInProgress) {
+                            const flowInProgress = this._activeVisits.findIndex(flow => flow.UUID === activity.TSAFlowID);
+                            if (flowInProgress >= 0) {
                                 foundStartEndActivity = true;
                                 //load flow statuses from activities
-                                flows = this.createVisitFlows([flowInProgress], activities, true);
+                                visits = this.createVisitFlows(flowInProgress, true);
                             }
                         }
                     }
                     if (!foundStartEndActivity) {
                         //just load the flow(s) with the steps
-                        flows = this.createVisitFlows(activeFlows);
+                        visits = this.createVisitFlows();
                     }
                 } else {
                     //no activites - just load the flow(s) wish the steps
-                    flows = this.createVisitFlows(activeFlows);
+                    visits = this.createVisitFlows();
                 }
             } else {
                 //no flows at all
@@ -91,27 +97,29 @@ class VisitFlowService {
 
         }
 
-        console.log('flows', flows);
-        return flows;
+        console.log('visits', visits);
+        return visits;
 
     }
 
-    private createVisitFlows(flows: any[], activities: any[] = [], searchActivity = false) {
-        let visitFlows: any[] = [];                
+    private createVisitFlows(flowInProgress = -1, searchActivity = false) {
+        let visitFlows: any[] = [];
+        let flows = flowInProgress >= 0 ? this._activeVisits[flowInProgress] : this._activeVisits;
 
         for (let flow of flows) {
             const steps = flow.steps;
-            let visitActivities: IVisitFlowActivity[] = []; 
+            let visitActivities: IVisitFlowActivity[] = [];
             for (let i = 0; i < steps.length; i++) {
                 visitActivities.push({
                     Group: steps[i].Group,
-                    ActivityType: steps[i].ActivityType,
+                    ResourceType: steps[i].ResourceType,
+                    ResourceTypeID: steps[i].ResourceTypeID,
                     Title: steps[i].Title,
                     Mandatory: steps[i].Mandatory,
                     Disabled: steps[i].Disabled === true,
-                    Status: this.getActivityStatus(activities, steps[0].ActivityType, searchActivity),
+                    Status: this.getActivityStatus(steps[0].ResourceType, steps[0].ResourceTypeID, searchActivity),
                     Completed: steps[0].Completed
-                } as IVisitFlowActivity);          
+                } as IVisitFlowActivity);
             }
             visitFlows.push({
                 Key: flow.Key,
@@ -120,26 +128,41 @@ class VisitFlowService {
                 Activities: [...visitActivities]
             });
         }
-       
+
+        const isarr = Array.isArray(visitFlows);
+        debugger;
         return visitFlows;
     }
 
     //check if there is an activity of the same type and return its status
-    private getActivityStatus(activities: any[], activityType: string, searchActivity: boolean): string {
+    private getActivityStatus(resourceType: string, resourceTypeID: string, searchActivity: boolean): string {
         let status = 'New';
+        let resource: any = null;
 
         if (!searchActivity) {
             return status;
         }
 
-        const activity = activities.find(activity => activity.ActivityTypeId === activityType);
-        if (activity) {
-            status = activity.StatusName;
+        switch (resourceType) {
+            case 'Activity':
+                resource = this._activities.find(activity => activity.ActivityTypeID == resourceTypeID);
+                break;
+            case 'Transaction':
+                resource = this._transactions.find(transaction => transaction.ActivityTypeID == resourceTypeID);
+                break;
+            case 'Survey':
+                //TODO
+                break;
+        }
+
+        if (resource) {
+            status = resource.StatusName;
         }
 
         return status;
     }
 
+    /*
     //TEMP
     setRandomCompleted() {
         //New
@@ -179,7 +202,7 @@ class VisitFlowService {
             .value();
 
     }
-
+*/
 
 
 }

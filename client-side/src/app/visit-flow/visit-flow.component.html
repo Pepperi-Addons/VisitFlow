@@ -1,32 +1,21 @@
-<!-- <div class="flow-container">
-    <div class="flow-groups">
-        <pep-button *ngFor="let group of flowGroups" [value]="group.name" styleType="regular" sizeType="md"
-            [disabled]="!group.isActive" iconName="system_ok" iconPosition="start"
-            (buttonClick)="onGroupClicked(group)"></pep-button>
-    </div>
-    <div class="group-activities" *ngIf="selectedGroupActivities">
-        <pep-button *ngFor="let activity of selectedGroupActivities" [value]="activity.title" styleType="regular"
-            sizeType="md" [disabled]="activity.status === 'Submitted'" iconName="system_ok" iconPosition="start"
-            (buttonClick)="onActivityClicked(activity)"></pep-button>
-    </div>
-</div> -->
-
-<div class="flow-container">
-    <ng-container *ngIf="flows$ | async as flows">
-        <ng-container *ngIf="selectedFlow else flowSelection">
-            <ng-container *ngTemplateOutlet="displayFlow; context: {flow: selectedFlow}"></ng-container>
+<div class="visit-container">
+    <ng-container *ngIf="visits.length">
+        <ng-container *ngIf="selectedVisit else visitSelection">
+            <ng-container *ngTemplateOutlet="displayVisit; context: {visit: selectedVisit, showReturn: true}"></ng-container>
         </ng-container>
-        <ng-template #displayFlow let-flow="flow">
-            <visit-details [activities]="flow.steps"></visit-details>
+        <ng-template #displayVisit let-visit="visit" let-showReturn="showReturn">
+            <visit-details [activities]="visit.Activities" [showReturn]="showReturn"></visit-details>
         </ng-template>
-        <ng-template #flowSelection>
-            <ng-container *ngIf="flows.length === 1">
-                <ng-container *ngTemplateOutlet="displayFlow; context: {flow: flows[0]}"></ng-container>
+        <ng-template #visitSelection>
+            <ng-container *ngIf="visits.length === 1">
+                <ng-container *ngTemplateOutlet="displayVisit; context: {visit: visits[0], showReturn: false}"></ng-container>
             </ng-container>
-            <ng-container *ngIf="flows.length > 1">
-                <pep-button *ngFor="let flow of flows" [value]="flow.name" styleType="regular" sizeType="md"
-                    [disabled]="false" iconName="system_ok" iconPosition="start" (buttonClick)="onFlowSelected(flow)">
-                </pep-button>
+            <ng-container *ngIf="visits.length > 1">
+                <div class="visit-selection">
+                    <pep-button *ngFor="let visit of visits" [value]="visit.Title" styleType="regular" sizeType="md"
+                        [disabled]="false" (buttonClick)="onVisitSelected(visit)">
+                    </pep-button>
+                </div>
             </ng-container>
         </ng-template>
     </ng-container>

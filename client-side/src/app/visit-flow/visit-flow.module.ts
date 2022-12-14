@@ -6,7 +6,7 @@ import { TranslateLoader, TranslateModule, TranslateService, TranslateStore } fr
 
 import { PepAddonService } from '@pepperi-addons/ngx-lib';
 import { PepButtonModule } from '@pepperi-addons/ngx-lib/button';
-import { PepIconRegistry, pepIconSystemAlert, pepIconSystemOk, pepIconSystemEdit, pepIconSystemMust, pepIconSystemFlag, pepIconSystemLock } from '@pepperi-addons/ngx-lib/icon';
+import { PepIconRegistry, pepIconSystemAlert, pepIconSystemOk, pepIconSystemEdit, pepIconSystemMust, pepIconSystemFlag, pepIconSystemLock, pepIconArrowLeftAlt } from '@pepperi-addons/ngx-lib/icon';
 import { GroupStatusIcon } from '../visit-details/pipes/group-status-icon.pipe';
 import { ActivityStatusIcon } from '../visit-details/pipes/activity-status-icon.pipe';
 
@@ -28,7 +28,8 @@ const pepIcons = [
     pepIconSystemEdit,   
     pepIconSystemMust, 
     pepIconSystemFlag,
-    pepIconSystemLock
+    pepIconSystemLock,
+    pepIconArrowLeftAlt
 ];
 
 @NgModule({

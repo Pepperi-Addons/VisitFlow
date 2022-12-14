@@ -1,6 +1,7 @@
 import { TranslateService } from '@ngx-translate/core';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { VisitFlowService } from './visit-flow.service';
+import { of } from 'rxjs';
 
 
 @Component({
@@ -14,8 +15,18 @@ export class VisitFlowComponent implements OnInit {
     set hostObject(value: any) {
         console.log('hostObject', value);
         if (value?.configuration?.udcFlow) {
-            //init flows
-            this.flows$ = this._visitFlowService.initUdcFlows(value.configuration.udcFlow);
+            //load flows
+            this.flows2$ = this._visitFlowService.loadVisits(value.configuration.udcFlow);
+            this._visitFlowService.loadVisits(value.configuration.udcFlow).then(
+                res => {
+                    console.log('promise res', res);
+                    if (res?.visits) {
+                        this._visitFlowService.visits = res.visits;
+                    }
+                    //this.flows3 = res?.visits;
+                    
+                }
+            )
             /*this._visitFlowService.initUdcFlows(value.configuration.udcFlow).subscribe(res => {
                 console.log('_visitFlowService', res[0]);    
                 console.log('service flows', this._visitFlowService.flows);
@@ -34,11 +45,18 @@ export class VisitFlowComponent implements OnInit {
         }*/
     }
     //get flow id
-    banana = '';
+    
     @Output() hostEvents: EventEmitter<any> = new EventEmitter<any>();
 
+    get visits() {
+        return this._visitFlowService.visits;
+    }
 
-    get selectedFlow() {
+    get flows4$() {
+        return this._visitFlowService.flows$;
+    } 
+
+    get selectedVisit() {
         return this._visitFlowService.selectedFlow;
     }
 
@@ -55,14 +73,22 @@ export class VisitFlowComponent implements OnInit {
     }
 
     flows$;
+    flows2$: Promise<{
+        visits: []
+    }>;
+    flows3: any[];
+    
 
     constructor(private translate: TranslateService, private _visitFlowService: VisitFlowService) {
-
+        /*this.flows$ = this._visitFlowService.flows$.subscribe(res => {
+            console.log('list changed', res);
+            this.flows$ = of(res);
+        });*/
     }
 
     ngOnInit(): void {
         console.log('block works 2');
-        this._visitFlowService.loadActivities();
+        this._visitFlowService.loadActivities();        
         // console.log('getRandom', this.getRandom());
     }
     /*
@@ -94,7 +120,7 @@ export class VisitFlowComponent implements OnInit {
         
     } */
 
-    onFlowSelected(flow) {
+    onVisitSelected(flow) {
         console.log('onFlowSelected', flow);
         this._visitFlowService.selectedFlow = flow;
     }
