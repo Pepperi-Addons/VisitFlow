@@ -2,21 +2,21 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { IVisitFlowActivity } from '../../visit-flow/visit-flow.model';
 
 @Pipe({ name: 'groupStatusIcon' })
-export class GroupStatusIcon implements PipeTransform {
+export class GroupStatusIconPipe implements PipeTransform {
     transform(activities: IVisitFlowActivity[]) {
-        let allDisabled = false;
+        let allDisabled = true;
         let allCompleted = true;
         let incompletedMandatory = false;
         
 
         for (let activity of activities) {
-            if (activity.Disabled) {                
-                allDisabled = true;                
+            if (!activity.Disabled) {                
+                allDisabled = false;                
             }
-            if (activity.Mandatory && activity.Completed !== activity.Status) {
+            if (activity.Mandatory && !activity.Completed) {
                 incompletedMandatory = true;
             }
-            if (activity.Completed !== activity.Status) {
+            if (!activity.Completed) {
                 allCompleted = false;;
             }            
         }

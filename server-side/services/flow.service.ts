@@ -96,11 +96,11 @@ export class FlowService {
                     Resource: SCHEME_NAMES.VISIT_FLOW_GROUPS,
                     AddonUUID: this._client.AddonUUID
                 },
-                ActivityId:
+                ResourceType:
                 {
                     Type: 'String'
                 },
-                ObjectType:
+                ResourceTypeID:
                 {
                     Type: 'String'
                 },

@@ -1,27 +1,80 @@
 
 import { Injectable } from '@angular/core';
-import { IVisitFlowActivityGroup, IVisitFlowActivity } from '../visit-flow/visit-flow.model';
+import { PepAddonService } from '@pepperi-addons/ngx-lib';
+import { IVisitFlow, IVisitFlowActivityGroup, IVisitFlowActivity } from '../visit-flow/visit-flow.model';
 import _ from 'lodash';
 
 @Injectable()
 export class VisitDetailsService {
+    private _key: string | null = null;
+    private _isInProgress = false;
+    private _creationDateTime: string | null = null;
+    private _accountUUID = 'df995088-fdc2-4a74-95db-e7af376f4a26';
+
+    //private _visit: IVisitFlow | undefined = undefined;
     private _groups: IVisitFlowActivityGroup[] = [];
+    //private _visitCreationDateTime: string | null = null;
 
     get groups() {
         return this._groups;
     }
 
-    initGroups(activities: IVisitFlowActivity[]) {
-        this._groups = _(activities)
+    get isInProgress() {
+        return this._isInProgress;
+    }
+
+    constructor(private _addonService: PepAddonService) {}
+
+    initVisit(visit: IVisitFlow) {
+        this._key = visit.Key;
+        this._isInProgress = visit.InProgress;
+        if (!visit.InProgress) {
+            this.lockActivities(visit.Activities);
+        }
+        this._creationDateTime = visit.CreationDateTime;
+        this._groups = this.initGroups(visit.Activities);
+        //console.log('after initVisit', this._groups);
+    }
+    
+    handleVisitStartActivityClicked(activity: IVisitFlowActivity) {
+        return this._addonService.emitEvent('OnClientStartVisitClick', {
+            AccountUUID: this._accountUUID,
+            VisitUUID: this._key
+        });  
+    }
+
+    handleActivityClicked(activity: IVisitFlowActivity) {        
+        return this._addonService.emitEvent('OnClientVisitActivityClick', {
+            AccountUUID: this._accountUUID,
+            ResourceType: activity.ResourceType,
+            ResourceTypeID: activity.ResourceTypeID,
+            CreationDateTime: this._creationDateTime
+        });        
+    }
+
+    /**
+     * lock all activities except start visit activity in case the visit isn't started
+     * @param activities 
+     */
+    private lockActivities(activities: IVisitFlowActivity[]) {
+        for(let activity of activities) {
+            if (!activity.Starter) {
+                activity.Disabled = true;
+            }
+        }
+    }
+
+    private initGroups(activities: IVisitFlowActivity[]) {
+        return _(activities)
             .groupBy(activity => activity.Group)
             .sortBy(group => activities.indexOf(group[0]))
             .map(group => {
                 return {
-                    name: group[0].Group,                    
-                    activities: group
+                    Name: group[0].Group,
+                    Activities: group
                 }
             })
-            .value();        
+            .value();
     }
 }
 

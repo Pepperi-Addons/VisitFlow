@@ -68,6 +68,16 @@
                 }
             }            
         }
+
+        .return-to-list {
+            ::ng-deep.mat-button {
+                height: 48px;                                                        
+
+                &:hover {
+                    @include mixins.focus();                             
+                }                       
+            }
+        }
     }    
 
     .group-activities {

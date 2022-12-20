@@ -60,12 +60,14 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         //const flowService = new FlowService(client);        
         //await flowService.createSchemas();
         //await flowService.upsertUDCs(); 
-        /*
-        const type = await flowService.createATD();        
-        if (type?.TypeID) {            
-            await flowService.createTSAFields(type.TypeID);
-        }
-        */
+        
+        //const type = await flowService.createATD();        
+        //if (type?.TypeID) {            
+          //  await flowService.createTSAFields('320970');
+        //}
+        
+       // const flowService = new FlowService(client);
+        //const type = await flowService.createATD();
         const service = new RelationsService(client);
         await service.upsertRelations();
     } catch (err) {

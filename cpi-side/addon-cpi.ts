@@ -5,55 +5,54 @@ export async function load(configuration: any) {
     pepperi.events.intercept('OnClientVisitsLoad' as any, {}, async (data, next, main): Promise<any> => {
        // debugger;   
         //data.collection = 'VisitFlows';
-        const service = new VisitFlowService(data.collection);
-        const visits = await service.getVisits();
-        //debugger;
-        return { visits: visits };
-        //TODO                        
-        //1 - get all active flows   
-        //2 - get active flow - for that you need only the startEndFlow activity
-        //3 - if found active - load it. else - show flows list (if only one found - load it)
-        //const flows = await pepperi.resources.resource("VisitFlows").get({where: 'Active = true'});
-        // const flows = await pepperi.resources.resource("VisitFlows").get({ where: `Key = ${data.flowUUID}` });
+        debugger;
+        const service = new VisitFlowService(data.AccountUUID);
+        let visits: any[] = [];        
+        //1 - check if there is an active flow
+        const inProgressVisit = await service.getInProgressVisitFlow(data.Collection);
+        debugger;
+        // user event - onVisitActiveDataLoad
+        if (inProgressVisit) {
+            //load in-progress visit            
+            visits = await service.createVisitFlows(inProgressVisit, true);
+            // user event - onVisitViewLoad
+        } else {
+            //load active visits
+            visits = await service.createVisitFlows();
+            // user eevet - onVisitFlowsDataLoad
+        }         
 
-        // const flows = await pepperi.resources.resource(data.collection).get({});
-        /*
-        const activities = await pepperi.api.activities.search({
-            fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime', 'TSAFlowID', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'],
-            filter: {
-                ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: []
-            }            
-        });
-        console.log(`recieved activities: ${JSON.stringify(activities)}`);*/
-        /*return flows
-            .filter(flow => flow.Active === true)
-            .map(flow => {
-                return {
-                    key: flow.Key,
-                    name: flow.Name
-                }
-            }) as any;*/
-            //.get({ where: 'Active = true' });
-
-        //return flows.map(flow => flow.Name) as any;
+        debugger;
+        return { visits: visits };        
     });
+    
+    pepperi.events.intercept('OnClientStartVisitClick' as any, {}, async (data): Promise<any> => {
+        const service = new VisitFlowService(data.AccountUUID);
+        debugger;
+        const url = await service.startVisit(data.VisitUUID);
 
-    pepperi.events.intercept('OnClientVisitLoad' as any, {}, async (data): Promise<void> => {
-        const service = new VisitFlowService('');
-        const flow = await pepperi.resources.resource(data.collection).get({ where: `Key = ${data.flowUUID}` });
-        //1 - fetch the activities
-        //2 - fetch the activities scheme
-        //3 - from the scheme get the group collection name
-        //4 - get the group collection
+        debugger;
 
+        return { url: url };
+        /* rem temp
+        if (url) {
+            await data.client?.navigateTo({ url: url });       
+        }   */     
+    });    
 
-        /*const groups = service.getGroups();
-        return groups as any; */
-    });
-
-    pepperi.events.intercept('OnClientVisitActivityClick' as any, {}, async (data): Promise<void> => {
-        const url = data.url;
-        await data.client?.navigateTo({ url: url });
+    pepperi.events.intercept('OnClientVisitActivityClick' as any, {}, async (data): Promise<any> => {
+        const service = new VisitFlowService(data.AccountUUID);    
+            //if Type = transaction
+        //const catalogUUID =  await service.chooseCatalog(data.client as any);
+        debugger;
+        const url = await service.getActivityUrl(data.client as any, data.ResourceType, data.ResourceTypeID, data.CreationDateTime);
+        debugger;
+        
+        return { url: url };
+        /* rem temp
+        if (url) {
+            await data.client?.navigateTo({ url: url });
+        } */       
 
     });
 

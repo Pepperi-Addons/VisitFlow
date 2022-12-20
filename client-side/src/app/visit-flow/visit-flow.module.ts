@@ -7,11 +7,12 @@ import { TranslateLoader, TranslateModule, TranslateService, TranslateStore } fr
 import { PepAddonService } from '@pepperi-addons/ngx-lib';
 import { PepButtonModule } from '@pepperi-addons/ngx-lib/button';
 import { PepIconRegistry, pepIconSystemAlert, pepIconSystemOk, pepIconSystemEdit, pepIconSystemMust, pepIconSystemFlag, pepIconSystemLock, pepIconArrowLeftAlt } from '@pepperi-addons/ngx-lib/icon';
-import { GroupStatusIcon } from '../visit-details/pipes/group-status-icon.pipe';
-import { ActivityStatusIcon } from '../visit-details/pipes/activity-status-icon.pipe';
 
 import { VisitFlowComponent } from './index';
 import { VisitDetailsComponent } from '../visit-details/visit-details.component';
+import { GroupStatusIconPipe } from '../visit-details/pipes/group-status-icon.pipe';
+import { ActivityStatusIconPipe } from '../visit-details/pipes/activity-status-icon.pipe';
+import { GroupLockedPipe } from '../visit-details/pipes/group-locked.pipe';
 
 import { config } from '../app.config';
 
@@ -36,8 +37,9 @@ const pepIcons = [
     declarations: [
         VisitFlowComponent,
         VisitDetailsComponent,
-        GroupStatusIcon,
-        ActivityStatusIcon
+        GroupStatusIconPipe,
+        ActivityStatusIconPipe,
+        GroupLockedPipe
     ],
     imports: [
         CommonModule,

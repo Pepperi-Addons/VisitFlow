@@ -4,7 +4,7 @@
             <ng-container *ngTemplateOutlet="displayVisit; context: {visit: selectedVisit, showReturn: true}"></ng-container>
         </ng-container>
         <ng-template #displayVisit let-visit="visit" let-showReturn="showReturn">
-            <visit-details [activities]="visit.Activities" [showReturn]="showReturn"></visit-details>
+            <visit-details [visit]="visit" [showReturn]="showReturn"></visit-details>
         </ng-template>
         <ng-template #visitSelection>
             <ng-container *ngIf="visits.length === 1">

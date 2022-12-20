@@ -1,33 +1,43 @@
 
 export interface IVisitFlow {
+    /*
     id: string;
     //activities: IVisitFlowActivity[];
     activityGroups: IVisitFlowActivityGroup[];
+    */
+    Key: string;
+    Name: string;
+    Title: string;
+    InProgress: boolean;
+    CreationDateTime?: string;
+    Activities: IVisitFlowActivity[];
 }
 
 export interface IVisitFlowActivityGroup {
-    type: string,
-    activities: IVisitFlowActivity[]
+    Name: string;
+    Activities: IVisitFlowActivity[];
 }
 
 
 export interface IVisitFlowActivity {    
-    ActivityId: string;
-    StepId: string;
+    //ActivityId: string;
+    //StepId: string;
     Group: string;
-    ObjectType: VisitFlowActivityType;
-    Catalog?: string;
+    ResourceType: VisitFlowActivityType;
+    ResourceTypeID: string;
+    //ObjectType: VisitFlowActivityType;
+    //Catalog?: string;
     Title?: string;
     Mandatory: boolean;    
     Disabled: boolean;   
-    Completed: string;
-    Status: string;
+    Completed: boolean;  
+    Starter: boolean;  
     DepandsOnStep?: number;
     [key: string]: any;
 }
 
 export type VisitFlowActivityType =
-    'GeneralActivity'
-    | 'Transaction'
-    | 'Survey'
+    'activities'
+    | 'transactions'
+    | 'surveys'
 

@@ -1,209 +1,379 @@
+import { IClient } from '@pepperi-addons/cpi-node/build/cpi-side/events';
+import { activityType2ResourceType } from '@pepperi-addons/cpi-node/build/cpi-side/wrappers';
 import _ from 'lodash';
 
 interface IVisitFlowActivity {
     Group: string;
-    ResourceType: 'Activity' | 'Transaction' | 'Survey';
+    ResourceType: 'activities' | 'transactions' | 'surveys';
     ResourceTypeID: string;
     Title: string;
     Mandatory: boolean;
     Disabled?: boolean;
-    Completed: string;
-    Status: string;
+    Completed: boolean;
+    Starter: boolean;
     DepandsOnStep?: number;
+    [key: string]: any;
+}
+
+interface IInProgressVisit {
+    ActiveVisitIndex: number,
+    CreationDateTime: string
 }
 
 class VisitFlowService {
-    private _collectionName = '';
+    // private _collectionName = '';
     private _activeVisits: any[] = [];
     private _activities: any[] = [];
+    private _transactionsLoaded = false;
     private _transactions: any[] = [];
     private _serveys: any[] = [];
+    private _loaderMap: Map<string, boolean>;
+    private _accountUUID = '';
 
-    constructor(name: string) {
+    constructor(accountUUID: string) {
         // this.loadActivities();
-        this._collectionName = name;
+        // this._collectionName = name;
+        this._accountUUID = accountUUID;
+        this._loaderMap = new Map();
 
     }
 
-    async getVisits() {
-        let visits: any[] = [];
+    /**
+     * get in-progress visit if exists, null otherwise
+     * @param collectionName udc name
+     * @returns in-progress visit object
+     */
+    async getInProgressVisitFlow(collectionName: string) {
+        let inProgressVisit: IInProgressVisit | null = null;
 
         const res: any = await Promise.all([
-            pepperi.resources.resource(this._collectionName).get({ where: 'Active = true' }),
-            pepperi.api.activities.search({
-                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'/*, 'TSAFlowID', 'TSAStartVisitDateTime', 'TSAEndVisitDateTime'*/],
-                filter: {
-                    ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisWeek', Values: []
-                }
-            }),
-            pepperi.api.transactions.search({
-                fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'],
-                filter: {
-                    ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisWeek', Values: []
-                }
-            })
-            //TODO - fetch surveys
+            pepperi.resources.resource(collectionName).get({ where: 'Active = true' }),
+            this.getResourceDataPromise('activities', this._accountUUID)
         ]);
-        console.log('data', res);
-
         debugger;
-
-        if (res?.length === 3) {
-
+        if (res?.length === 2) {
             this._activeVisits = res[0];
             if (res[1].success && res[1].objects?.length) {
                 this._activities = res[1].objects;
+                this._loaderMap.set('activities', true);
+
             }
-            if (res[2].success && res[2].objects?.length) {
-                this._transactions = res[2].objects;
+            if (this._activeVisits?.length && this._activities.length) {
+                inProgressVisit = this.getInProgressVisit();
             }
-
-            //1 - get all active flows  
-            //2 - check that you have at least one active flow 
-            //3 - check that you have activities - if no just load the flow(s) with the steps
-            //3 - in the activities seatch for an active flow - for that you need only the startEndFlow activity
-            //3 - if found active - load it. else - show flows list (if only one found - load it)
-
-
-            //found active flows
-            if (this._activeVisits?.length) {
-                //search for start/end flow activities        
-                if (this._activities.length) {
-                    const strtEndActivities = this._activities.filter(activity => activity.TSAFlowID);
-                    let foundStartEndActivity = false;
-                    for (let activity of strtEndActivities) {
-                        //TODO waiting for answers
-                        if (activity.TSAFlowID && activity.TSAStartVisitDateTime && !activity.TSAEndVisitDateTime) {
-                            //activity in progress - even of 
-                            const flowInProgress = this._activeVisits.findIndex(flow => flow.UUID === activity.TSAFlowID);
-                            if (flowInProgress >= 0) {
-                                foundStartEndActivity = true;
-                                //load flow statuses from activities
-                                visits = this.createVisitFlows(flowInProgress, true);
-                            }
-                        }
-                    }
-                    if (!foundStartEndActivity) {
-                        //just load the flow(s) with the steps
-                        visits = this.createVisitFlows();
-                    }
-                } else {
-                    //no activites - just load the flow(s) wish the steps
-                    visits = this.createVisitFlows();
-                }
-            } else {
-                //no flows at all
-            }
-
         }
-
-        console.log('visits', visits);
-        return visits;
-
+        
+        return inProgressVisit;
     }
 
-    private createVisitFlows(flowInProgress = -1, searchActivity = false) {
-        let visitFlows: any[] = [];
-        let flows = flowInProgress >= 0 ? this._activeVisits[flowInProgress] : this._activeVisits;
+    /**
+     * search for an in-progress visit
+     * @returns in-progress visit info if exists, otherwise null
+     */
+    private getInProgressVisit() {
+        //const strtEndActivities = this._activities.filter(activity => activity.TSAFlowID);
+        const strtEndActivities = this._activities.filter(activity => activity.Type === 'VF_VisitFlowMainActivity');
+        //VF_VisitFlowMainActivity
+        debugger;
+        let inProgressActivity: {
+            VisitUUID: string,
+            CreationDateTime: string
+        } | null = null;
+        let inProgressVisit: IInProgressVisit | null = null;
 
-        for (let flow of flows) {
-            const steps = flow.steps;
+        for (let startEndActivity of strtEndActivities) {
+            //TODO - get status from enum object
+            if (startEndActivity.StatusName === 'InCreation') {
+                inProgressActivity = {
+                    VisitUUID: startEndActivity.UUID,
+                    CreationDateTime: startEndActivity.CreationDateTime || null
+                };
+                break;
+            }
+        }
+
+        if (inProgressActivity) {
+            const inProgressVisitIndex = this._activeVisits.findIndex(visit => visit.UUID === inProgressActivity?.VisitUUID);
+            if (inProgressVisitIndex >= 0) {
+                inProgressVisit = {
+                    ActiveVisitIndex: inProgressVisitIndex,
+                    CreationDateTime: inProgressActivity.CreationDateTime
+                }
+            }
+        }
+
+        return inProgressVisit;
+    }
+
+    /**
+     * create list of all active visit flows
+     * @param inProgressVisit object containing the in-progress visit flow, if no such the value equals to null
+     * @param searchActivity whether searching for an activity status is needed
+     * @returns list of flows
+     */
+    async createVisitFlows(inProgressVisit: IInProgressVisit | null = null, searchResource = false) {
+        let visitFlows: any[] = [];
+        let visits;
+
+        if (inProgressVisit) {
+            visits = this._activeVisits[inProgressVisit.ActiveVisitIndex];
+        } else {
+            visits = this._activeVisits;
+        }
+
+        for (let visit of visits) {
+            const steps = visit.steps;
             let visitActivities: IVisitFlowActivity[] = [];
             for (let i = 0; i < steps.length; i++) {
-                visitActivities.push({
-                    Group: steps[i].Group,
-                    ResourceType: steps[i].ResourceType,
-                    ResourceTypeID: steps[i].ResourceTypeID,
-                    Title: steps[i].Title,
-                    Mandatory: steps[i].Mandatory,
-                    Disabled: steps[i].Disabled === true,
-                    Status: this.getActivityStatus(steps[0].ResourceType, steps[0].ResourceTypeID, searchActivity),
-                    Completed: steps[0].Completed
-                } as IVisitFlowActivity);
+                let activity: IVisitFlowActivity = _.clone(steps[i]);
+                activity.Completed = await this.isActivityCompleted(steps[i].ResourceType, steps[i].ResourceTypeID, searchResource, steps[i].Completed); //New | InProgress | Completed                     
+                activity.Starter = steps[i].ResourceTypeID === 'VF_VisitFlowMainActivity';
+                visitActivities.push(activity);                
             }
             visitFlows.push({
-                Key: flow.Key,
-                Name: flow.Name,
-                Title: flow.Description,
+                Key: visit.Key,
+                Name: visit.Name,
+                Title: visit.Description,
+                InProgress: inProgressVisit !== null,
+                CreationDateTime: inProgressVisit && inProgressVisit.CreationDateTime ? inProgressVisit.CreationDateTime : null,
                 Activities: [...visitActivities]
             });
         }
 
-        const isarr = Array.isArray(visitFlows);
-        debugger;
         return visitFlows;
     }
 
-    //check if there is an activity of the same type and return its status
-    private getActivityStatus(resourceType: string, resourceTypeID: string, searchActivity: boolean): string {
-        let status = 'New';
-        let resource: any = null;
+    private async isActivityCompleted(resourceType: string, resourceTypeID: string, searchResource: boolean, completedStatus: string) {
+        if (!searchResource) {
+            return false;
+        }
 
-        if (!searchActivity) {
+        const resource = await this.getResource(resourceType, resourceTypeID);
+
+        return resource && resource.StatusName === completedStatus;
+    }
+
+    //check if there is an activity of the same type and return its status   
+    /* 
+    private getActivityStatus(resourceType: string, resourceTypeID: string, searchResource: boolean): string {
+        let status = 'New';        
+
+        if (!searchResource) {
             return status;
         }
 
-        switch (resourceType) {
-            case 'Activity':
-                resource = this._activities.find(activity => activity.ActivityTypeID == resourceTypeID);
-                break;
-            case 'Transaction':
-                resource = this._transactions.find(transaction => transaction.ActivityTypeID == resourceTypeID);
-                break;
-            case 'Survey':
-                //TODO
-                break;
-        }
-
+        const resource = this.getResource(resourceType, resourceTypeID);
+        
         if (resource) {
             status = resource.StatusName;
         }
 
         return status;
-    }
+    } */
 
-    /*
-    //TEMP
-    setRandomCompleted() {
-        //New
-        //InCreation
-        //InPayment
-        function getRandomMinMax(min, max) {
-            min = Math.ceil(min);
-            max = Math.floor(max);
-            return Math.floor(Math.random() * (max - min) + min);
+    private async getResource(resourceType: string, resourceTypeID: string) {
+        let resource: any = null;
+
+        await this.loadResource(resourceType);
+
+        switch(resourceType) {
+            case 'activities':
+                resource = this._activities.find(activity => activity.Type == resourceTypeID);
+            break;
+
+            case 'transactions':
+                resource = this._transactions.find(transaction => transaction.Type == resourceTypeID);
+            break;
         }
-
-        const random = getRandomMinMax(1, 9);
-
-        for (let i = 0; i < random; i++) {
-            this._activities[i].status = 'Submitted';
-        }
-    }
-
-    getGroups() {
-        //fetch activities from UDS
-        const activities = this._activities; //temp
-        //TODO - bulk fetch activities status        
-
-        this.setRandomCompleted();
-        //group activities by type
-
-        return _(activities)
-            .groupBy(activity => activity.group)
-            .sortBy(group => activities.indexOf(group[0]))
-            .map(group => {
-                return {
-                    name: group[0].group,
-                    isActive: group.filter(activity => activity.status !== 'Submitted').length > 0,
-                    activities: group
+        /*switch (resourceType) {
+            case 'activities':
+                resource = this._activities.find(activity => activity.Type == resourceTypeID);
+                break;
+            case 'transactions':
+                if (!this._transactionsLoaded) {
+                    const res: any = await pepperi.api.transactions.search({
+                        fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'],
+                        filter: {
+                            ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: []
+                        }
+                    });
+                    if (res.success && res.objects?.length) {
+                        this._transactions = res.objects;
+                    }
+                    this._transactionsLoaded = true;
                 }
-            })
-            .value();
+                resource = this._transactions.find(transaction => transaction.Type == resourceTypeID);
+                break;
+            case 'surveys':
+                //TODO
+                break;
+        } */
+
+        return resource;
+    }
+
+
+    private async loadResource(resourceType) {
+        let res: any = null;
+
+        const loaded = this._loaderMap.get(resourceType);
+
+        if (!loaded) {
+            res = await this.getResourceDataPromise(resourceType, this._accountUUID);
+            if (res?.success && res.objects?.length) {
+                switch (resourceType) {
+                    case 'activities':
+                        this._activities = res.objects;
+                        this._loaderMap.set(resourceType, true);
+                        break;
+                    case 'transactions':
+                        this._transactions = res.objects;
+                        this._loaderMap.set(resourceType, true);
+                        break;
+                }
+            }
+        }
+
+       // return Promise.resolve();
 
     }
-*/
 
+    private getResourceDataPromise(resourceType: string, accountUUID: string) {
+        switch (resourceType) {
+            case 'activities':
+                return pepperi.api.activities.search({
+                    fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime'],
+                    filter: {
+                        Operation: 'AND',
+                        LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                        RightNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [accountUUID.replace(/-/g, '')] }
+                    }
+                });
+            case 'transactions':
+                return pepperi.api.transactions.search({
+                    fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime'],
+                    filter: {
+                        Operation: 'AND',
+                        LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                        RightNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [accountUUID.replace(/-/g, '')] }
+                    }
+                });
+            default:
+                return null;
+        }
+
+    }
+
+    async startVisit(visitUUID: string) {
+        try {            
+            const res: any = await pepperi.app.activities.add({
+                type: {
+                    Name: 'VF_VisitFlowMainActivity'
+                },
+                references: {
+                    account: {
+                        UUID: this._accountUUID//'10001010'
+                    }
+                },
+                object: {
+                    TSAFlowID: visitUUID
+                }    
+            });
+            debugger;
+            return res && res.success === true ? `/activities/details/${res.id}` : '';
+        } catch (err) {
+            return '';
+        }        
+    }
+
+    async getActivityUrl(client: IClient, resourceType: string, resourceTypeID: string, creationDateTime: string) {                
+        let baseUrl: string = `/${resourceType}/details/`;        
+        let resource: any;
+        let catalogUUID = '';
+
+        try {
+            resource = await this.getResource(resourceType, resourceTypeID);
+            debugger;
+            if (resource) {
+                return baseUrl + resource.UUID;
+            } else {
+                if (resourceType === 'transactions') {
+                    catalogUUID = await this.chooseCatalog(client);
+                    if (!catalogUUID) {
+                        return '';
+                    }
+                }
+                debugger;
+                const newResource = await this.createResource(resourceType, resourceTypeID, catalogUUID);
+                debugger;
+                return baseUrl + newResource.UUID;
+            }  
+        } catch (err) {
+            return '';
+        }                      
+    }   
+
+    async chooseCatalog(client: IClient) {
+        let catalogUUID = '';
+        const templateModalOptions: any = {
+            addonBlockName: 'ResourcePicker',
+            hostObject: {
+                resource: 'accounts',
+                view: 'c684b1bd-74a5-4504-bf4f-9144cb77b8ee',
+                selectionMode: 'single', // multi
+                selectedObjectKeys: [],
+            },
+            title: 'Select catalog',
+            allowCancel: true,
+        };
+
+        const catalogResult = await client?.showModal(templateModalOptions);
+
+        // If catalog template was choosen
+        if (!catalogResult.canceled && catalogResult.result?.action === 'on-save' && catalogResult.result.data?.selectedObjectKeys.length > 0) {
+            catalogUUID = catalogResult.result.data.selectedObjectKeys[0];
+        }
+
+        return catalogUUID;
+    }
+
+    private async createResource(resourceType: string, resourceTypeID: string, accountUUID: string, catalogUUID: string = '') {
+        let resource: any = null;
+
+        switch (resourceType) {
+            case 'activities': {
+                const resource = await pepperi.app.activities.add({
+                    type: {
+                        Name: resourceTypeID
+                    },
+                    references: {
+                        account: {
+                            UUID: accountUUID
+                        }
+                    }
+                });
+                break;
+            }
+            case 'transactions': {
+                const resource = await pepperi.app.transactions.add({
+                    type: {
+                        Name: resourceTypeID
+                    },
+                    references: {
+                        account: {
+                            UUID: accountUUID
+                        },
+                        catalog: {
+                            Name: catalogUUID
+                        }
+                    }
+                });
+                break;
+            }
+        }
+
+        return resource;
+    }
 
 }
 
