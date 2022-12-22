@@ -27,11 +27,11 @@ export interface IVisitFlowActivity {
     ResourceTypeID: string;
     //ObjectType: VisitFlowActivityType;
     //Catalog?: string;
-    Title?: string;
+    Title: string;
     Mandatory: boolean;    
-    Disabled: boolean;   
+    Disabled?: boolean;   
     Completed: boolean;  
-    Starter: boolean;  
+    Starter?: boolean;  
     DepandsOnStep?: number;
     [key: string]: any;
 }

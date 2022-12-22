@@ -32,7 +32,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         // 1 - Steps - that inherits from Steps shcema (from type contained)
         // 2 - Flows inherits from Flows shcema with property of name steps (array of type contained resource for resource = Steps)
         // 3 - Groups that inherit from Groups shcema 
-        await flowService.upsertUDCs(); 
+        await flowService.upsertUDCs();
 
         const type = await flowService.createATD();
         //const type = await createATD(papiClient);
@@ -56,18 +56,18 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
-        //
-        //const flowService = new FlowService(client);        
-        //await flowService.createSchemas();
-        //await flowService.upsertUDCs(); 
-        
-        //const type = await flowService.createATD();        
-        //if (type?.TypeID) {            
-          //  await flowService.createTSAFields('320970');
-        //}
-        
-       // const flowService = new FlowService(client);
-        //const type = await flowService.createATD();
+        /*
+        const flowService = new FlowService(client);
+        await flowService.createSchemas();
+        await flowService.upsertUDCs(); 
+
+        const type = await flowService.createATD();
+        if (type?.TypeID) {
+            await flowService.createTSAFields(type.TypeID);
+        }
+        */        
+        // const flowService = new FlowService(client);
+       
         const service = new RelationsService(client);
         await service.upsertRelations();
     } catch (err) {
@@ -78,12 +78,12 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
 }
 
 export async function downgrade(client: Client, request: Request): Promise<any> {
-    try {       
+    try {
         const service = new RelationsService(client);
         await service.upsertRelations();
     } catch (err) {
         throw new Error(`Failed to upgrade addon. error - ${err}`);
-    }    
+    }
 }
 
 /*

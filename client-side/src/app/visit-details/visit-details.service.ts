@@ -9,7 +9,7 @@ export class VisitDetailsService {
     private _key: string | null = null;
     private _isInProgress = false;
     private _creationDateTime: string | null = null;
-    private _accountUUID = 'df995088-fdc2-4a74-95db-e7af376f4a26';
+    private _accountUUID = '61a891db-1252-4043-be81-0e4e874d7385';
 
     //private _visit: IVisitFlow | undefined = undefined;
     private _groups: IVisitFlowActivityGroup[] = [];
@@ -37,14 +37,14 @@ export class VisitDetailsService {
     }
     
     handleVisitStartActivityClicked(activity: IVisitFlowActivity) {
-        return this._addonService.emitEvent('OnClientStartVisitClick', {
+        this._addonService.emitEvent('OnClientStartVisitClick', {
             AccountUUID: this._accountUUID,
             VisitUUID: this._key
         });  
     }
 
     handleActivityClicked(activity: IVisitFlowActivity) {        
-        return this._addonService.emitEvent('OnClientVisitActivityClick', {
+        this._addonService.emitEvent('OnClientVisitActivityClick', {
             AccountUUID: this._accountUUID,
             ResourceType: activity.ResourceType,
             ResourceTypeID: activity.ResourceTypeID,

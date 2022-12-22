@@ -12,8 +12,12 @@ export class VisitFlowService {
     private _visits: any[] = [];
     private _selectedVisit: {} | null = null; 
     private _visitCreationDateTime: string | null = null;
-    private _accountUUID = 'df995088-fdc2-4a74-95db-e7af376f4a26' //TODO get from pageParams of account home page
+    private _accountUUID = '';//61a891db-1252-4043-be81-0e4e874d7385' //TODO get from pageParams of account home page
   
+    set accountUUID(val: string) {
+        this._accountUUID = val;
+    }
+
     set visits(list: any[]) {
         this._visits = list;
 
@@ -40,6 +44,7 @@ export class VisitFlowService {
 
     loadVisits(collection: string) {
         console.log('loadVisits', collection);
+        console.log('this._accountUUID', this._accountUUID);
         return this._addonService.emitEvent('OnClientVisitsLoad', {
             Collection: collection,
             AccountUUID: this._accountUUID

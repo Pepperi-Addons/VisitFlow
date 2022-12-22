@@ -4,11 +4,11 @@ import { ApiFieldObject, PapiClient, AddonDataScheme, SchemeFieldTypes } from "@
 import { ActivityType, VisitFlowTSAFields } from '../metadata';
 
 const SCHEME_NAMES = {
-    VISIT_FLOWS: 'visitFlows',
+    VISIT_FLOWS: 'visit_flows',
     UDC_VISIT_FLOW: 'VisitFlows',
-    VISIT_FLOW_GROUPS: 'visitFlowGroups',
+    VISIT_FLOW_GROUPS: 'visit_flow_groups',
     UDC_VISIT_FLOW_GROUPS: 'VisitFlowGroups',
-    VISIT_FLOW_STEPS: 'visitFlowSteps',
+    VISIT_FLOW_STEPS: 'visit_flow_steps',
     UDC_VISIT_FLOW_STEPS: 'VisitFlowSteps'
 }
 

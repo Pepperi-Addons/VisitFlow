@@ -1,13 +1,13 @@
 import '@pepperi-addons/cpi-node';
 import VisitFlowService from './visit-flow-cpi.service';
 
-export async function load(configuration: any) {   
+export async function load(configuration: any) {
     pepperi.events.intercept('OnClientVisitsLoad' as any, {}, async (data, next, main): Promise<any> => {
-       // debugger;   
+        // debugger;   
         //data.collection = 'VisitFlows';
         debugger;
         const service = new VisitFlowService(data.AccountUUID);
-        let visits: any[] = [];        
+        let visits: any[] = [];
         //1 - check if there is an active flow
         const inProgressVisit = await service.getInProgressVisitFlow(data.Collection);
         debugger;
@@ -20,39 +20,38 @@ export async function load(configuration: any) {
             //load active visits
             visits = await service.createVisitFlows();
             // user eevet - onVisitFlowsDataLoad
-        }         
+        }
 
         debugger;
-        return { visits: visits };        
+        return { visits: visits };
     });
-    
-    pepperi.events.intercept('OnClientStartVisitClick' as any, {}, async (data): Promise<any> => {
+
+    pepperi.events.intercept('OnClientStartVisitClick' as any, {}, async (data): Promise<void> => {
         const service = new VisitFlowService(data.AccountUUID);
         debugger;
-        const url = await service.startVisit(data.VisitUUID);
+        const url = await service.getStartVisitUrl(data.VisitUUID);
 
         debugger;
 
-        return { url: url };
-        /* rem temp
-        if (url) {
-            await data.client?.navigateTo({ url: url });       
-        }   */     
-    });    
+        //return { url: url };
 
-    pepperi.events.intercept('OnClientVisitActivityClick' as any, {}, async (data): Promise<any> => {
-        const service = new VisitFlowService(data.AccountUUID);    
-            //if Type = transaction
+        if (url) {
+            await data.client?.navigateTo({ url: url });
+        }
+    });
+
+    pepperi.events.intercept('OnClientVisitActivityClick' as any, {}, async (data): Promise<void> => {
+        const service = new VisitFlowService(data.AccountUUID);
+        //if Type = transaction
         //const catalogUUID =  await service.chooseCatalog(data.client as any);
         debugger;
         const url = await service.getActivityUrl(data.client as any, data.ResourceType, data.ResourceTypeID, data.CreationDateTime);
         debugger;
-        
-        return { url: url };
-        /* rem temp
+
+        //return { url: url };        
         if (url) {
             await data.client?.navigateTo({ url: url });
-        } */       
+        } 
 
     });
 

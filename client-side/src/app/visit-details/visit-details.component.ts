@@ -12,6 +12,16 @@ import { VisitFlowService } from '../visit-flow/visit-flow.service';
 })
 export class VisitDetailsComponent implements OnInit {
     @Input()
+    set hostObject(value: any) {
+        console.log('hostObject inner', value);        
+        if (value?.configuration?.udcFlow) {
+            
+        } else {
+            // no udc selected;
+        } 
+    }
+
+    @Input()
     set activities(list: IVisitFlowActivity[]) {
         console.log('activities 2', list);
       //  this._visitDetailsService.initGroups(list);
@@ -55,12 +65,12 @@ export class VisitDetailsComponent implements OnInit {
         console.log('onActivityClicked', activity);
         let url = '';//TEMP
         if (activity.Starter && !this._visitDetailsService.isInProgress) {
-            url = await this._visitDetailsService.handleVisitStartActivityClicked(activity);
+            this._visitDetailsService.handleVisitStartActivityClicked(activity);
         } else {
-            url = await this._visitDetailsService.handleActivityClicked(activity);
+            this._visitDetailsService.handleActivityClicked(activity);
         }
         
-        console.log('url', url);
+        //console.log('url', url);
         if (url) {
             //navigate
         }

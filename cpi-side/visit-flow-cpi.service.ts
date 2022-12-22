@@ -10,7 +10,7 @@ interface IVisitFlowActivity {
     Mandatory: boolean;
     Disabled?: boolean;
     Completed: boolean;
-    Starter: boolean;
+    Starter?: boolean;
     DepandsOnStep?: number;
     [key: string]: any;
 }
@@ -23,6 +23,7 @@ interface IInProgressVisit {
 class VisitFlowService {
     // private _collectionName = '';
     private _activeVisits: any[] = [];
+    private _startEndActivities: any[] = [];
     private _activities: any[] = [];
     private _transactionsLoaded = false;
     private _transactions: any[] = [];
@@ -33,7 +34,7 @@ class VisitFlowService {
     constructor(accountUUID: string) {
         // this.loadActivities();
         // this._collectionName = name;
-        this._accountUUID = accountUUID;
+        this._accountUUID = accountUUID.replace(/-/g, '');
         this._loaderMap = new Map();
 
     }
@@ -48,21 +49,18 @@ class VisitFlowService {
 
         const res: any = await Promise.all([
             pepperi.resources.resource(collectionName).get({ where: 'Active = true' }),
-            this.getResourceDataPromise('activities', this._accountUUID)
+            this.getStartEndActivitiesPromise()
+            //this.getResourceDataPromise('activities', /*['CreationDateTime', 'TSAFlowID']*/[])
         ]);
         debugger;
-        if (res?.length === 2) {
+        if (res?.length === 2 && res[0].length) {
             this._activeVisits = res[0];
             if (res[1].success && res[1].objects?.length) {
-                this._activities = res[1].objects;
-                this._loaderMap.set('activities', true);
-
-            }
-            if (this._activeVisits?.length && this._activities.length) {
-                inProgressVisit = this.getInProgressVisit();
+                //this._startEndActivities = res[1].objects;
+                inProgressVisit = await this.getInProgressVisit(res[1].objects[0]);
             }
         }
-        
+
         return inProgressVisit;
     }
 
@@ -70,39 +68,68 @@ class VisitFlowService {
      * search for an in-progress visit
      * @returns in-progress visit info if exists, otherwise null
      */
-    private getInProgressVisit() {
-        //const strtEndActivities = this._activities.filter(activity => activity.TSAFlowID);
-        const strtEndActivities = this._activities.filter(activity => activity.Type === 'VF_VisitFlowMainActivity');
-        //VF_VisitFlowMainActivity
-        debugger;
-        let inProgressActivity: {
-            VisitUUID: string,
-            CreationDateTime: string
-        } | null = null;
+    private async getInProgressVisit(activity) {
         let inProgressVisit: IInProgressVisit | null = null;
 
-        for (let startEndActivity of strtEndActivities) {
-            //TODO - get status from enum object
-            if (startEndActivity.StatusName === 'InCreation') {
-                inProgressActivity = {
-                    VisitUUID: startEndActivity.UUID,
-                    CreationDateTime: startEndActivity.CreationDateTime || null
-                };
-                break;
+        if (activity.StatusName !== 'Submitted') {
+            const inProgressVisitIndex = this._activeVisits.findIndex(visit => visit.Key === activity.TSAFlowID);
+            if (inProgressVisitIndex >= 0) {
+                inProgressVisit = {
+                    ActiveVisitIndex: inProgressVisitIndex,
+                    CreationDateTime: activity.CreationDateTime
+                }
             }
         }
-
+        /*
+        const inProgressActivity = await this.getOpenStartActivity();
+        debugger;
         if (inProgressActivity) {
-            const inProgressVisitIndex = this._activeVisits.findIndex(visit => visit.UUID === inProgressActivity?.VisitUUID);
+            const inProgressVisitIndex = this._activeVisits.findIndex(visit => visit.Key === inProgressActivity.VisitUUID);
             if (inProgressVisitIndex >= 0) {
                 inProgressVisit = {
                     ActiveVisitIndex: inProgressVisitIndex,
                     CreationDateTime: inProgressActivity.CreationDateTime
                 }
             }
-        }
+        }*/
 
         return inProgressVisit;
+    }
+
+    private async getOpenStartActivity() {
+        //const startEndActivities = this._activities.filter(activity => activity.Type === 'VF_VisitFlowMainActivity');
+        //VF_VisitFlowMainActivity
+        debugger;
+        let inProgressActivity: {
+            UUID: string;
+            VisitUUID: string;
+            CreationDateTime: string;
+        } | null = null;
+        let inProgressUUID = '';
+
+        for (let startEndActivity of this._startEndActivities) {
+            if (startEndActivity.StatusName !== 'Submitted') {
+                //load start activity data                
+                inProgressUUID = startEndActivity.UUID;
+                break;
+            }
+        }
+        debugger;
+        if (inProgressUUID) {
+            const res: any = await pepperi.api.activities.get({
+                key: { UUID: inProgressUUID },
+                fields: ['TSAFlowID', 'CreationDateTime']
+            });
+            if (res?.success === true && res.object) {
+                inProgressActivity = {
+                    UUID: inProgressUUID,
+                    VisitUUID: res.object.TSAFlowID,
+                    CreationDateTime: res.object.CreationDateTime
+                }
+            }
+        }
+
+        return inProgressActivity;
     }
 
     /**
@@ -115,8 +142,9 @@ class VisitFlowService {
         let visitFlows: any[] = [];
         let visits;
 
+        debugger;
         if (inProgressVisit) {
-            visits = this._activeVisits[inProgressVisit.ActiveVisitIndex];
+            visits = [this._activeVisits[inProgressVisit.ActiveVisitIndex]];
         } else {
             visits = this._activeVisits;
         }
@@ -126,9 +154,15 @@ class VisitFlowService {
             let visitActivities: IVisitFlowActivity[] = [];
             for (let i = 0; i < steps.length; i++) {
                 let activity: IVisitFlowActivity = _.clone(steps[i]);
-                activity.Completed = await this.isActivityCompleted(steps[i].ResourceType, steps[i].ResourceTypeID, searchResource, steps[i].Completed); //New | InProgress | Completed                     
-                activity.Starter = steps[i].ResourceTypeID === 'VF_VisitFlowMainActivity';
-                visitActivities.push(activity);                
+                activity.Completed = await this.isActivityCompleted(
+                    steps[i].ResourceType, steps[i].ResourceTypeID,
+                    inProgressVisit && inProgressVisit.CreationDateTime ? inProgressVisit.CreationDateTime : '',
+                    searchResource,
+                    steps[i].Completed);
+                if (steps[i].ResourceTypeID === 'VF_VisitFlowMainActivity') {
+                    activity.Starter = true;
+                }
+                visitActivities.push(activity);
             }
             visitFlows.push({
                 Key: visit.Key,
@@ -143,83 +177,137 @@ class VisitFlowService {
         return visitFlows;
     }
 
-    private async isActivityCompleted(resourceType: string, resourceTypeID: string, searchResource: boolean, completedStatus: string) {
+    private async isActivityCompleted(resourceType: string, resourceTypeID: string, creationDateTime: string, searchResource: boolean, completedStatus: string) {
         if (!searchResource) {
             return false;
         }
 
-        const resource = await this.getResource(resourceType, resourceTypeID);
-
-        return resource && resource.StatusName === completedStatus;
+        const item = await this.getResourceItem(resourceType, resourceTypeID, creationDateTime, completedStatus);
+        debugger;
+        if (item) {
+            if (item && item.StatusName === completedStatus) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
-    //check if there is an activity of the same type and return its status   
-    /* 
-    private getActivityStatus(resourceType: string, resourceTypeID: string, searchResource: boolean): string {
-        let status = 'New';        
-
-        if (!searchResource) {
-            return status;
-        }
-
-        const resource = this.getResource(resourceType, resourceTypeID);
-        
-        if (resource) {
-            status = resource.StatusName;
-        }
-
-        return status;
-    } */
-
-    private async getResource(resourceType: string, resourceTypeID: string) {
+    /*
+    private async getResource(resourceType: string, resourceTypeID: string, creationDateTime: string) {
         let resource: any = null;
 
-        await this.loadResource(resourceType);
+        try {
+            await this.loadResource(resourceType);
+            debugger;
+            switch (resourceType) {
+                case 'activities':
+                    resource = this._activities.find(activity => activity.Type == resourceTypeID);
+                    break;
 
-        switch(resourceType) {
-            case 'activities':
-                resource = this._activities.find(activity => activity.Type == resourceTypeID);
-            break;
-
-            case 'transactions':
-                resource = this._transactions.find(transaction => transaction.Type == resourceTypeID);
-            break;
+                case 'transactions':
+                    resource = this._transactions.find(transaction => transaction.Type == resourceTypeID);
+                    break;
+            }
+        } catch (err) {
+            debugger;
         }
-        /*switch (resourceType) {
-            case 'activities':
-                resource = this._activities.find(activity => activity.Type == resourceTypeID);
-                break;
-            case 'transactions':
-                if (!this._transactionsLoaded) {
-                    const res: any = await pepperi.api.transactions.search({
-                        fields: ['UUID', 'Type', 'ActivityTypeID', 'StatusName', 'CreationDateTime'],
-                        filter: {
-                            ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: []
-                        }
-                    });
-                    if (res.success && res.objects?.length) {
-                        this._transactions = res.objects;
-                    }
-                    this._transactionsLoaded = true;
-                }
-                resource = this._transactions.find(transaction => transaction.Type == resourceTypeID);
-                break;
-            case 'surveys':
-                //TODO
-                break;
-        } */
+
 
         return resource;
-    }
+    } 
+    */
 
+    private async getResourceItem(resourceType: string, resourceTypeID: string, creationDateTime: string, completedStatus: string = '') {
+        try {
+            /*const searchObject = {
+                fields: ['UUID', 'StatusName'],
+                filter: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: '>=', Values: [creationDateTime] },
+                    RightNode: {
+                        Operation: 'AND',
+                        LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID] },
+                        RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
+                    }
+                },
+                sorting: [{ Field: 'CreationDateTime', Ascending: true }]
+            } */
+
+            let item: any | null = null;
+            let res: any;
+            debugger;
+            switch (resourceType) {
+                case 'activities':                                       
+                    res = await pepperi.api.activities.search({
+                        fields: ['UUID', 'StatusName'],
+                        filter: {
+                            Operation: 'AND',
+                            LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID] },
+                            RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }                           
+                        },
+                        sorting: [{ Field: 'CreationDateTime', Ascending: false }],
+                        pageSize: 1 
+                    }); 
+                    break;
+                case 'transactions':
+                    res = await pepperi.api.transactions.search({
+                        fields: ['UUID', 'StatusName'],
+                        filter: {
+                            Operation: 'AND',
+                            LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID] },
+                            RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
+                            /*Operation: 'AND',
+                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'After', Values: [creationDateTime] },
+                            RightNode: {
+                                Operation: 'AND',
+                                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID] },
+                                RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
+                            } */
+                        },
+                        sorting: [{ Field: 'CreationDateTime', Ascending: false }],
+                        pageSize: 1
+                    });
+                    break;
+                case 'surveys':
+
+                    break;
+                default:
+                    return null;
+
+            }
+            debugger;
+            if (res?.success === true && res.objects.length) {
+                //search for completed status in all resources
+                item = res.objects[0];
+                if (completedStatus) {
+                    for (let resource of res.objects) {
+                        if (resource.StatusName === completedStatus) {
+                            item = resource;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return item;
+        } catch (err) {
+            debugger;
+            return null;
+        }
+    }
 
     private async loadResource(resourceType) {
         let res: any = null;
 
-        const loaded = this._loaderMap.get(resourceType);
+        try {
+            //const loaded = this._loaderMap.get(resourceType);
 
-        if (!loaded) {
-            res = await this.getResourceDataPromise(resourceType, this._accountUUID);
+            debugger;
+            //if (!loaded) {
+            res = await this.getResourceDataPromise(resourceType);
             if (res?.success && res.objects?.length) {
                 switch (resourceType) {
                     case 'activities':
@@ -232,94 +320,162 @@ class VisitFlowService {
                         break;
                 }
             }
-        }
-
-       // return Promise.resolve();
-
-    }
-
-    private getResourceDataPromise(resourceType: string, accountUUID: string) {
-        switch (resourceType) {
-            case 'activities':
-                return pepperi.api.activities.search({
-                    fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime'],
-                    filter: {
-                        Operation: 'AND',
-                        LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
-                        RightNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [accountUUID.replace(/-/g, '')] }
-                    }
-                });
-            case 'transactions':
-                return pepperi.api.transactions.search({
-                    fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime'],
-                    filter: {
-                        Operation: 'AND',
-                        LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
-                        RightNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [accountUUID.replace(/-/g, '')] }
-                    }
-                });
-            default:
-                return null;
-        }
-
-    }
-
-    async startVisit(visitUUID: string) {
-        try {            
-            const res: any = await pepperi.app.activities.add({
-                type: {
-                    Name: 'VF_VisitFlowMainActivity'
-                },
-                references: {
-                    account: {
-                        UUID: this._accountUUID//'10001010'
-                    }
-                },
-                object: {
-                    TSAFlowID: visitUUID
-                }    
-            });
+            //}
+        } catch (err) {
             debugger;
-            return res && res.success === true ? `/activities/details/${res.id}` : '';
+        }
+
+
+        // return Promise.resolve();
+
+    }
+
+    private getResourceDataPromise(resourceType: string, additionalFields: string[] = []) {
+        try {
+            debugger;
+            let fieldList = ['UUID', 'Type', 'StatusName'];
+            if (additionalFields.length) {
+                fieldList = [...fieldList, ...additionalFields];
+            }
+            switch (resourceType) {
+                case 'activities':
+                    return pepperi.api.activities.search({
+                        fields: fieldList,
+                        filter: {
+                            Operation: 'AND',
+                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                            RightNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID.replace(/-/g, '')] }
+                        }
+                    });
+                case 'transactions':
+                    return pepperi.api.transactions.search({
+                        fields: fieldList,
+                        filter: {
+                            Operation: 'AND',
+                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                            RightNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID.replace(/-/g, '')] }
+                        }
+                    });
+                default:
+                    return null;
+            }
+        } catch (err) {
+            debugger;
+            return null;
+        }
+
+    }
+
+    private getStartEndActivitiesPromise() {
+        return pepperi.api.activities.search({
+            fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime', 'TSAFlowID'],
+            filter: {
+                Operation: 'AND',
+                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                RightNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountUUID] }
+                    , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: ['VF_VisitFlowMainActivity'] }
+                }
+            },
+            sorting: [{ Field: 'CreationDateTime', Ascending: false }],
+            pageSize: 1
+        });
+
+    }
+
+    /**
+     * returns startEnd activity, if exists return the item otherwise creates a new one
+     * @param visitUUID 
+     * @returns 
+     */
+    async getStartVisitUrl(visitUUID: string) {
+        try {
+            let url = '/activities/details/';
+            let activity: any = null;
+            //await this.loadResource('activities');
+            //
+            const res: any = await this.getStartEndActivitiesPromise();
+            debugger;
+
+            if (res?.success && res.objects.length === 1) {
+                // activity = await this.getOpenStartActivity(/*res.objects[0]*/);
+                if (res.objects[0].StatusName !== 'Submitted') {
+                    activity = res.objects[0];
+                }
+
+            }
+
+            //
+
+            debugger;
+            if (activity) {
+                url += activity.UUID;
+            } else {
+                const res: any = await pepperi.app.activities.add({
+                    type: {
+                        Name: 'VF_VisitFlowMainActivity'
+                    },
+                    references: {
+                        account: {
+                            UUID: this._accountUUID//'10001010'
+                        }
+                    },
+                    object: {
+                        TSAFlowID: visitUUID
+                    }
+                });
+                debugger;
+                if (res && res.success === true && res.id) {
+                    url += res.id;
+                } else {
+                    return '';
+                }
+                //return res && res.success === true ? `/activities/details/${res.id}` : '';
+            }
+
+            return url;
+
         } catch (err) {
             return '';
-        }        
+        }
     }
 
-    async getActivityUrl(client: IClient, resourceType: string, resourceTypeID: string, creationDateTime: string) {                
-        let baseUrl: string = `/${resourceType}/details/`;        
+    async getActivityUrl(client: IClient, resourceType: string, resourceTypeID: string, creationDateTime: string) {
+        let url = `/${resourceType}/details/`;
         let resource: any;
-        let catalogUUID = '';
+        let catalogName = '';
 
         try {
-            resource = await this.getResource(resourceType, resourceTypeID);
+            resource = await this.getResourceItem(resourceType, resourceTypeID, creationDateTime);
+            //resource = await this.getResource(resourceType, resourceTypeID);
             debugger;
             if (resource) {
-                return baseUrl + resource.UUID;
+                return url + resource.UUID;
             } else {
                 if (resourceType === 'transactions') {
-                    catalogUUID = await this.chooseCatalog(client);
-                    if (!catalogUUID) {
+                    catalogName = await this.chooseCatalog(client);
+                    if (!catalogName) {
                         return '';
                     }
                 }
                 debugger;
-                const newResource = await this.createResource(resourceType, resourceTypeID, catalogUUID);
+                const newResource = await this.createResource(resourceType, resourceTypeID, catalogName);
                 debugger;
-                return baseUrl + newResource.UUID;
-            }  
+                return url + newResource.id;
+            }
         } catch (err) {
             return '';
-        }                      
-    }   
+        }
+    }
 
-    async chooseCatalog(client: IClient) {
-        let catalogUUID = '';
+    private async chooseCatalog(client: IClient) {
+        let catalogName = '';
         const templateModalOptions: any = {
             addonBlockName: 'ResourcePicker',
             hostObject: {
-                resource: 'accounts',
-                view: 'c684b1bd-74a5-4504-bf4f-9144cb77b8ee',
+                resource: 'catalogs',
+                view: 'baab3dca-0dfd-4141-9dec-c62b34a09c98',
                 selectionMode: 'single', // multi
                 selectedObjectKeys: [],
             },
@@ -331,47 +487,54 @@ class VisitFlowService {
 
         // If catalog template was choosen
         if (!catalogResult.canceled && catalogResult.result?.action === 'on-save' && catalogResult.result.data?.selectedObjectKeys.length > 0) {
-            catalogUUID = catalogResult.result.data.selectedObjectKeys[0];
+            catalogName = catalogResult.result.data.selectedObjectKeys[0];
         }
 
-        return catalogUUID;
+        return catalogName;
     }
 
-    private async createResource(resourceType: string, resourceTypeID: string, accountUUID: string, catalogUUID: string = '') {
+    private async createResource(resourceType: string, resourceTypeID: string, catalogName: string = '') {
         let resource: any = null;
 
-        switch (resourceType) {
-            case 'activities': {
-                const resource = await pepperi.app.activities.add({
-                    type: {
-                        Name: resourceTypeID
-                    },
-                    references: {
-                        account: {
-                            UUID: accountUUID
-                        }
-                    }
-                });
-                break;
-            }
-            case 'transactions': {
-                const resource = await pepperi.app.transactions.add({
-                    type: {
-                        Name: resourceTypeID
-                    },
-                    references: {
-                        account: {
-                            UUID: accountUUID
+        try {
+            switch (resourceType) {
+                case 'activities': {
+                    resource = await pepperi.app.activities.add({
+                        type: {
+                            Name: resourceTypeID
                         },
-                        catalog: {
-                            Name: catalogUUID
+                        references: {
+                            account: {
+                                UUID: this._accountUUID
+                            }
                         }
-                    }
-                });
-                break;
+                    });
+                    break;
+                }
+                case 'transactions': {
+                    resource = await pepperi.app.transactions.add({
+                        type: {
+                            Name: resourceTypeID
+                        },
+                        references: {
+                            account: {
+                                UUID: this._accountUUID
+                            },
+                            catalog: {
+                                Name: catalogName
+                            }
+                        }
+                    });
+                    break;
+                }
             }
+        } catch (err) {
+            debugger;
+            return resource;
         }
 
+
+        debugger;
         return resource;
     }
 

@@ -13,20 +13,26 @@ import { of } from 'rxjs';
 export class VisitFlowComponent implements OnInit {
     @Input()
     set hostObject(value: any) {
-        console.log('hostObject', value);        
-        if (value?.configuration?.udcFlow) {
-            this._visitFlowService.loadVisits(value.configuration.udcFlow)
-                .then(
-                    res => {
-                        console.log('res', res);
-                        if (res?.visits) {
-                            this._visitFlowService.visits = res.visits;
+        console.log('hostObject', value);   
+        if (value?.pageParameters?.AccountUUID) {
+            this._visitFlowService.accountUUID = value.pageParameters.AccountUUID;
+            if (value?.configuration?.udcFlow) {
+                this._visitFlowService.loadVisits(value.configuration.udcFlow)
+                    .then(
+                        res => {
+                            console.log('res', res);
+                            if (res?.visits) {
+                                this._visitFlowService.visits = res.visits;
+                            }
                         }
-                    }
-                )
+                    )
+            } else {
+                // no udc selected;
+            } 
         } else {
-            // no udc selected;
+            //no account uuid
         } 
+        
     }
 
     @Output() hostEvents: EventEmitter<any> = new EventEmitter<any>();
