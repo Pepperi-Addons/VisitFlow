@@ -28,9 +28,11 @@ export class VisitFlowComponent implements OnInit {
                     )
             } else {
                 // no udc selected;
+                this.errorMessage = 'No UDC selected';
             } 
         } else {
             //no account uuid
+            this.errorMessage = 'No account selected';
         } 
         
     }
@@ -44,7 +46,9 @@ export class VisitFlowComponent implements OnInit {
     get selectedVisit() {
         return this._visitFlowService.selectedVisit;
     }
-    dataSource;
+    
+    errorMessage = '';
+
     constructor(private _visitFlowService: VisitFlowService) {
         //
     }

@@ -5,7 +5,7 @@
     /*height: 100%;*/
     display: flex;
     gap: variables.$spacing-lg;    
-    margin: variables.$spacing-2xl variables.$spacing-lg variables.$spacing-lg variables.$spacing-lg;
+    /*margin: variables.$spacing-2xl variables.$spacing-lg variables.$spacing-lg variables.$spacing-lg;*/
 
     .flow-groups, .group-activities {
         display: flex;
@@ -46,7 +46,6 @@
                 width: 411px;
             }
             
-            
             &.selected {
                 ::ng-deep.mat-button {
                     @include mixins.pep-state-active(regular, null, true);  
@@ -66,7 +65,17 @@
                         }
                     }
                 }
-            }            
+            }   
+            
+            @media (max-width: variables.$screen-max-size-2xs) {
+                &.group {
+                    width: 288px;
+                }
+
+                &.activity {
+                    width: 288px;
+                }
+            }
         }
 
         .return-to-list {
@@ -78,13 +87,46 @@
                 }                       
             }
         }
+
+        .return-to-groups {
+            display: none;
+        }
+
+        @media (max-width: variables.$screen-max-size-2xs) {
+            .return-to-groups {
+                display: grid;
+
+                ::ng-deep.mat-button {
+                    height: 48px;                                                        
+    
+                    &:hover {
+                        @include mixins.focus();                             
+                    }                       
+                }
+            }
+        }
     }    
 
     .group-activities {
-       background-color: lightgray;
-       /*width: 364px; */
-       padding: variables.$spacing-lg;
+        background-color: lightgray;
+        /*width: 364px; */
+        padding: variables.$spacing-lg;
     }
+
+    @media (max-width: variables.$screen-max-size-2xs) {
+        .flow-groups {
+            &.hide-groups {
+                display: none;
+            }
+        }
+
+        .group-activities {
+            background-color: unset;           
+            padding: 0;
+         }
+    }
+
+  
     
     /*
     pep-button {        
@@ -93,3 +135,4 @@
         }                
     } */
 }
+

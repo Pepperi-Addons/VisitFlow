@@ -1,31 +1,36 @@
 <div class="visit-container">
-    <ng-container *ngIf="visits.length">
-        <ng-container *ngIf="selectedVisit else visitSelection">
-            <ng-container *ngTemplateOutlet="displayVisit; context: {visit: selectedVisit, showReturn: true}">
-            </ng-container>
-        </ng-container>
-        <ng-template #displayVisit let-visit="visit" let-showReturn="showReturn">
-            <visit-details [visit]="visit" [showReturn]="showReturn"></visit-details>
-        </ng-template>
-        <ng-template #visitSelection>
-            <ng-container *ngIf="visits.length === 1">
-                <ng-container *ngTemplateOutlet="displayVisit; context: {visit: visits[0], showReturn: false}">
+    <div *ngIf="!errorMessage" class="content">
+        <ng-container *ngIf="visits.length">
+            <ng-container *ngIf="selectedVisit else visitSelection">
+                <ng-container *ngTemplateOutlet="displayVisit; context: {visit: selectedVisit, showReturn: true}">
                 </ng-container>
             </ng-container>
-            <ng-container *ngIf="visits.length > 1">
-                <div class="visit-selection">
-                    <div class="content">
-                        <div class="header">
-                            Select Visit
-                        </div>
-                        <div class="items-container">
-                            <pep-button *ngFor="let visit of visits" [value]="visit.Title" styleType="regular"
-                                sizeType="md" [disabled]="false" (buttonClick)="onVisitSelected(visit)">
-                            </pep-button>
-                        </div>
-                    </div>
-                </div>
-            </ng-container>
-        </ng-template>
-    </ng-container>
+            <ng-template #displayVisit let-visit="visit" let-showReturn="showReturn">
+                <visit-details [visit]="visit" [showReturn]="showReturn"></visit-details>
+            </ng-template>
+            <ng-template #visitSelection>
+                <ng-container *ngIf="visits.length === 1">
+                    <ng-container *ngTemplateOutlet="displayVisit; context: {visit: visits[0], showReturn: false}">
+                    </ng-container>
+                </ng-container>
+                <ng-container *ngIf="visits.length > 1">
+                    <!-- <div class="visit-selection">
+                        <div class="content"> -->
+                            <div class="header">
+                                Select Visit
+                            </div>
+                            <div class="items-container">
+                                <pep-button *ngFor="let visit of visits" [value]="visit.Title" styleType="regular"
+                                    sizeType="md" [disabled]="false" (buttonClick)="onVisitSelected(visit)">
+                                </pep-button>
+                            </div>
+                        <!-- </div>
+                    </div> -->
+                </ng-container>
+            </ng-template>
+        </ng-container>
+    </div>
+    <div *ngIf="errorMessage" class="error-message">
+        {{errorMessage}}
+    </div>
 </div>

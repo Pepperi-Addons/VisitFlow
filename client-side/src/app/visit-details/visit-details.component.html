@@ -1,5 +1,5 @@
 <div class="flow-container">
-    <div class="flow-groups">
+    <div class="flow-groups" [ngClass]="{'hide-groups': selectedGroup}">
         <ng-container *ngFor="let group of groups">
             <ng-container *ngIf="group.Activities | groupStatusIcon as statusIconName">
                 <pep-button class="visit-item group"
@@ -10,7 +10,7 @@
         </ng-container>
         <ng-container *ngIf="showReturn">
             <pep-button class="return-to-list" [value]="'Back'" styleType="regular" sizeType="md"
-                [iconName]="'arrow_left_alt'" iconPosition="start" (buttonClick)="onReturnClicked()"></pep-button>
+                [iconName]="'arrow_left_alt'" iconPosition="start" (buttonClick)="onReturnToVisitListClicked()"></pep-button>
         </ng-container>
     </div>
     <div class="group-activities" *ngIf="selectedGroup">
@@ -18,5 +18,8 @@
             [value]="activity.Title" styleType="regular" sizeType="md" [disabled]="activity.Completed || activity.Disabled"
             [iconName]="activity | activityStatusIcon" iconPosition="start" (buttonClick)="onActivityClicked(activity)">
         </pep-button>
+
+        <pep-button class="return-to-groups" [value]="'Back'" styleType="regular" sizeType="md"
+        [iconName]="'arrow_left_alt'" iconPosition="start" (buttonClick)="onReturnToGroupsClicked()"></pep-button>
     </div>
 </div>

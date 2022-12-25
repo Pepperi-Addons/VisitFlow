@@ -23,14 +23,14 @@ export class VisitDetailsComponent implements OnInit {
 
     @Input()
     set activities(list: IVisitFlowActivity[]) {
-        console.log('activities 2', list);
+        console.log('activities 2 local locl', list);
       //  this._visitDetailsService.initGroups(list);
     };
 
     
     @Input()
     set visit(visit: IVisitFlow)  {
-        console.log('visit', visit);
+        console.log('visit locl', visit);
         this._visitDetailsService.initVisit(visit);
     }
 
@@ -78,7 +78,11 @@ export class VisitDetailsComponent implements OnInit {
        // this._visitDetailsService.handleActivityClicked(activity);
     }
 
-    onReturnClicked() {
+    onReturnToVisitListClicked() {
         this._visitFlowService.selectedVisit = null;
+    }    
+
+    onReturnToGroupsClicked() {
+        this.selectedGroup = null;
     }    
 }
