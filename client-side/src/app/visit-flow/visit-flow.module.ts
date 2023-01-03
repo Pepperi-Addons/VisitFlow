@@ -11,7 +11,7 @@ import { PepIconRegistry, pepIconSystemAlert, pepIconSystemOk, pepIconSystemEdit
 import { VisitFlowComponent } from './index';
 import { VisitDetailsComponent } from '../visit-details/visit-details.component';
 import { GroupStatusIconPipe } from '../visit-details/pipes/group-status-icon.pipe';
-import { ActivityStatusIconPipe } from '../visit-details/pipes/activity-status-icon.pipe';
+import { StepStatusIconPipe } from '../visit-details/pipes/activity-status-icon.pipe';
 import { GroupLockedPipe } from '../visit-details/pipes/group-locked.pipe';
 
 import { config } from '../app.config';
@@ -38,7 +38,7 @@ const pepIcons = [
         VisitFlowComponent,
         VisitDetailsComponent,
         GroupStatusIconPipe,
-        ActivityStatusIconPipe,
+        StepStatusIconPipe,
         GroupLockedPipe
     ],
     imports: [

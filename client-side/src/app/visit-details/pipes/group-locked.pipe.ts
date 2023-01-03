@@ -1,22 +1,21 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { IVisitFlowActivity } from '../../visit-flow/visit-flow.model';
+import { IVisitFlowStep } from 'shared';
 
 @Pipe({ name: 'isGroupLocked' })
 export class GroupLockedPipe implements PipeTransform {
-    transform(activities: IVisitFlowActivity[]) {
+    transform(steps: IVisitFlowStep[]) {
         let allDisabled = true;
         let allCompleted = true;                
 
-        for (let activity of activities) {
-            if (!activity.Disabled) {                
+        for (let step of steps) {
+            if (!step.Disabled) {                
                 allDisabled = false;                
             }            
-            if (!activity.Completed) {
+            if (!step.Completed) {
                 allCompleted = false;;
             }            
         }
 
-        return allDisabled || allCompleted;        
-
+        return allDisabled || allCompleted;      
     }
 }

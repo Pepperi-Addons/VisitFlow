@@ -1,7 +1,8 @@
 import { AddonDataScheme, ApiFieldObject, Relation } from "@pepperi-addons/papi-sdk"
+import { VISIT_FLOW_MAIN_ACTIVITY } from 'shared';
 
 export const ActivityType = {
-    ExternalID: 'VF_VisitFlowMainActivity',
+    ExternalID: VISIT_FLOW_MAIN_ACTIVITY,
     Icon: 'icon2',
     Description: 'The Main Activity for the visit flow'
 }

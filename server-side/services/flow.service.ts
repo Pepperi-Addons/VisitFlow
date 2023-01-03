@@ -2,15 +2,16 @@
 import { Client, Request } from '@pepperi-addons/debug-server';
 import { ApiFieldObject, PapiClient, AddonDataScheme, SchemeFieldTypes } from "@pepperi-addons/papi-sdk";
 import { ActivityType, VisitFlowTSAFields } from '../metadata';
-
-const SCHEME_NAMES = {
-    VISIT_FLOWS: 'visit_flows',
-    UDC_VISIT_FLOW: 'VisitFlows',
-    VISIT_FLOW_GROUPS: 'visit_flow_groups',
-    UDC_VISIT_FLOW_GROUPS: 'VisitFlowGroups',
-    VISIT_FLOW_STEPS: 'visit_flow_steps',
-    UDC_VISIT_FLOW_STEPS: 'VisitFlowSteps'
-}
+import { 
+    VISIT_FLOW_STEPS_TABLE_NAME, 
+    VISIT_FLOW_STEPS_BASE_TABLE_NAME,
+    VISIT_FLOW_GROUPS_TABLE_NAME,
+    VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
+    VISIT_FLOWS_TABLE_NAME,
+    VISIT_FLOWS_BASE_TABLE_NAME,
+    USER_ACTION_ON_VISIT_FLOW_LOAD,
+    USER_ACTION_ON_VISIT_FLOW_STEP_CLICK
+} from 'shared';
 
 export class FlowService {
     private _papiClient: PapiClient;
@@ -42,7 +43,7 @@ export class FlowService {
 
     private getFlowsSchema(): AddonDataScheme {
         return {
-            Name: SCHEME_NAMES.VISIT_FLOWS,
+            Name: VISIT_FLOWS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
             Fields: {
@@ -64,7 +65,7 @@ export class FlowService {
 
     private getGroupsSchema(): AddonDataScheme {
         return {
-            Name: SCHEME_NAMES.VISIT_FLOW_GROUPS,
+            Name: VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
             Fields: {
@@ -82,7 +83,7 @@ export class FlowService {
 
     private getStepsSchema(): AddonDataScheme {
         return {
-            Name: SCHEME_NAMES.VISIT_FLOW_STEPS,
+            Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
             Fields: {
@@ -93,7 +94,7 @@ export class FlowService {
                 Group:
                 {
                     Type: 'Resource',
-                    Resource: SCHEME_NAMES.VISIT_FLOW_GROUPS,
+                    Resource: VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
                     AddonUUID: this._client.AddonUUID
                 },
                 ResourceType:
@@ -150,12 +151,12 @@ export class FlowService {
                         AddonUUID: this._client.AddonUUID,
                         Description: '',
                         Mandatory: false,
-                        Resource: SCHEME_NAMES.UDC_VISIT_FLOW_STEPS,
+                        Resource: VISIT_FLOW_STEPS_TABLE_NAME,
                         Type: 'ContainedResource'
                     },
                     Mandatory: false,
                     OptionalValues: [],
-                    Resource: SCHEME_NAMES.UDC_VISIT_FLOW_STEPS,
+                    Resource: VISIT_FLOW_STEPS_TABLE_NAME,
                     Type: 'Array'
                 }
             },
@@ -174,10 +175,10 @@ export class FlowService {
         };
 
         return {
-            Name: SCHEME_NAMES.UDC_VISIT_FLOW,
+            Name: VISIT_FLOWS_TABLE_NAME,
             Extends: {
                 AddonUUID: this._client.AddonUUID,
-                Name: SCHEME_NAMES.VISIT_FLOWS
+                Name: VISIT_FLOWS_BASE_TABLE_NAME
             },
             SyncData: {
                 Sync: true
@@ -188,7 +189,7 @@ export class FlowService {
     }
 
      /**
-     * upserts a UDC scheme that inherits from 'visitFlowGroups' scheme     
+     * upserts a UDC scheme that inherits from visit flow groups scheme     
      * @returns udc scheme
      */
     private getGroupsUdcSchema(): any {
@@ -213,10 +214,10 @@ export class FlowService {
         };
 
         return {
-            Name: SCHEME_NAMES.UDC_VISIT_FLOW_GROUPS,
+            Name: VISIT_FLOW_GROUPS_TABLE_NAME,
             Extends: {
                 AddonUUID: this._client.AddonUUID,
-                Name: SCHEME_NAMES.VISIT_FLOW_GROUPS
+                Name: VISIT_FLOW_GROUPS_BASE_TABLE_NAME
             },
             SyncData: {
                 Sync: true
@@ -227,7 +228,7 @@ export class FlowService {
     }
 
     /**
-     * upserts a UDC scheme that inherits from 'visitFlowSteps' scheme     
+     * upserts a UDC scheme that inherits from visit flow steps scheme     
      * @returns 
      */
     private getStepsUdcSchema(): any {
@@ -252,10 +253,10 @@ export class FlowService {
         };
 
         return {
-            Name: SCHEME_NAMES.UDC_VISIT_FLOW_STEPS,
+            Name: VISIT_FLOW_STEPS_TABLE_NAME,
             Extends: {
                 AddonUUID: this._client.AddonUUID,
-                Name: SCHEME_NAMES.VISIT_FLOW_STEPS
+                Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME
             },
             SyncData: {
                 Sync: true
@@ -275,6 +276,22 @@ export class FlowService {
         return await this._papiClient.post(bulkUrl, VisitFlowTSAFields);
     }
 
+    /***********************************************************************************************/
+    //                              User Events functions
+    /************************************************************************************************/
+    
+    getVisitFLowUserEvents(query: any) {
+        const events = {
+            "Events": [{
+                Title: 'On visit flow data load',
+                EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD
+            }, {
+                Title: 'On visit step click',
+                EventKey: USER_ACTION_ON_VISIT_FLOW_STEP_CLICK
+            }]
+        }
 
+        return events;
+    }
 
 }

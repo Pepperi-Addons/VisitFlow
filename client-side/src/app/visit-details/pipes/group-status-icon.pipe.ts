@@ -1,61 +1,39 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { IVisitFlowActivity } from '../../visit-flow/visit-flow.model';
+import { IVisitFlowStep } from 'shared';
 
 @Pipe({ name: 'groupStatusIcon' })
 export class GroupStatusIconPipe implements PipeTransform {
-    transform(activities: IVisitFlowActivity[]) {
+    transform(steps: IVisitFlowStep[]) {
         let allDisabled = true;
         let allCompleted = true;
         let incompletedMandatory = false;
         
-
-        for (let activity of activities) {
-            if (!activity.Disabled) {                
+        for (let step of steps) {
+            if (!step.Disabled) {                
                 allDisabled = false;                
             }
-            if (activity.Mandatory && !activity.Completed) {
+            if (step.Mandatory && !step.Completed) {
                 incompletedMandatory = true;
             }
-            if (!activity.Completed) {
+            if (!step.Completed) {
                 allCompleted = false;;
             }            
         }
-        //all the activities are disabled
+        //all the steps are disabled
         if (allDisabled) {
             return 'system_lock';
         }
 
-        //there is a mandatory activity that is not completed 
+        //there is a mandatory step that is not completed 
         if (incompletedMandatory) {
             return 'system_alert';
         }
 
-        //all the activities are completed
+        //all the steps are completed
         if (allCompleted) {
             return 'system_ok';
         }
-        return 'system_flag';
-        /*
-        //when all the activities are disabled
-        if (activities.filter(activity => activity.Enabled === false).length === activities.length) {
-            return 'system_lock';
-        }
-        //when there is a mandatory activity that is not completed        
-        let attention = false;
-        for (let activity of activities) {
-            if (activity.Mandatory && activity.Completed !== activity.Status) {
-                attention = true;
-                break;
-            }
-        }
-        if (attention) {
-            return 'system_alert';
-        }
-        //done when all the activities are completed
-        if (!activities.filter(activity => activity.Completed !== activity.Status).length) {
-            return 'system_ok';
-        }
-        return 'system_flag';*/
+        return 'system_flag';        
 
     }
 }

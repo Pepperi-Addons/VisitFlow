@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, OnInit } from '@angular/core';
-import { IVisitFlow, IVisitFlowActivityGroup, IVisitFlowActivity } from '../visit-flow/visit-flow.model';
+import { Component, Input, OnInit } from '@angular/core';
+import { IVisitFlow, IVisitFlowGroup, IVisitFlowStep } from 'shared';
 import { VisitDetailsService } from './visit-details.service';
 import { VisitFlowService } from '../visit-flow/visit-flow.service';
 
@@ -10,37 +10,25 @@ import { VisitFlowService } from '../visit-flow/visit-flow.service';
     styleUrls: ['./visit-details.component.scss'],
     providers: [VisitDetailsService]
 })
-export class VisitDetailsComponent implements OnInit {
-    @Input()
-    set hostObject(value: any) {
-        console.log('hostObject inner', value);        
-        if (value?.configuration?.udcFlow) {
-            
-        } else {
-            // no udc selected;
-        } 
-    }
-
-    @Input()
-    set activities(list: IVisitFlowActivity[]) {
-        console.log('activities 2 local locl', list);
-      //  this._visitDetailsService.initGroups(list);
-    };
-
-    
+export class VisitDetailsComponent implements OnInit {      
     @Input()
     set visit(visit: IVisitFlow)  {
-        console.log('visit locl', visit);
-        this._visitDetailsService.initVisit(visit);
+        console.log('visit', visit);
+        this._visitDetailsService.visit = visit;
     }
 
-    @Input() showReturn = false;
+    @Input() 
+    set accountUUID(val: string) {
+        this._visitDetailsService.accountUUID = val;
+    };
 
+    @Input() showReturn = false;
+    
     get groups() {
         return this._visitDetailsService.groups;
     }
 
-    selectedGroup: IVisitFlowActivityGroup;
+    selectedGroup: IVisitFlowGroup;
 
     constructor(
         private _visitDetailsService: VisitDetailsService,
@@ -51,31 +39,16 @@ export class VisitDetailsComponent implements OnInit {
     ngOnInit(): void {
         
     }
-
-    initGroups(list: IVisitFlowActivity[]) {
-
-    }
-
+    
     onGroupClicked(group) {
         console.log('onGroupClicked', group);
         this.selectedGroup = group;
     }
 
-    async onActivityClicked(activity) {
-        console.log('onActivityClicked', activity);
-        let url = '';//TEMP
-        if (activity.Starter && !this._visitDetailsService.isInProgress) {
-            this._visitDetailsService.handleVisitStartActivityClicked(activity);
-        } else {
-            this._visitDetailsService.handleActivityClicked(activity);
-        }
-        
-        //console.log('url', url);
-        if (url) {
-            //navigate
-        }
-        //TODO - check how to fetch the activity uuid
-       // this._visitDetailsService.handleActivityClicked(activity);
+    async onStepClicked(step: IVisitFlowStep) {
+        console.log('onStepClicked', step);
+
+        this._visitDetailsService.onStepClicked(step);                        
     }
 
     onReturnToVisitListClicked() {

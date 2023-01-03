@@ -6,7 +6,7 @@
                 </ng-container>
             </ng-container>
             <ng-template #displayVisit let-visit="visit" let-showReturn="showReturn">
-                <visit-details [visit]="visit" [showReturn]="showReturn"></visit-details>
+                <visit-details [visit]="visit" [accountUUID]="accountUUID" [showReturn]="showReturn"></visit-details>
             </ng-template>
             <ng-template #visitSelection>
                 <ng-container *ngIf="visits.length === 1">

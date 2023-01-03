@@ -1,4 +1,3 @@
-import { TranslateService } from '@ngx-translate/core';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { VisitFlowEditorService } from './visit-flow-editor.service';
 
@@ -23,25 +22,15 @@ export class VisitFlowEditorComponent implements OnInit {
     flows$;
     selectedUdcFlow = '';
 
-    constructor(
-        private _translate: TranslateService,
-        private _visitFlowEditorService: VisitFlowEditorService
-    ) {
+    constructor(private _visitFlowEditorService: VisitFlowEditorService) {
     }
 
     ngOnInit(): void {
-        this.flows$ = this._visitFlowEditorService.loadFlows();
-        /*this._visitFlowEditorService.loadFlows().subscribe(res => {
-            console.log('flows', res);
-        })*/
+        this.flows$ = this._visitFlowEditorService.loadFlows();        
     }
 
     ngOnChanges(e: any): void {
-    }
-
-    onSidebarStateChange(state) {
-        console.log('onSidebarStateChange', state);
-    }
+    }  
 
     onUDCFlowSelect(selected: string) {
         console.log('onUDCFlowSelect', selected);
@@ -54,17 +43,5 @@ export class VisitFlowEditorComponent implements OnInit {
         });
 
     }
-
-    testNavigate() {
-        const eventData = {
-            detail: {
-                eventKey: 'OnFlowNavigation',
-                eventData: {
-                    url: 'url'
-                }
-            }
-        };
-        const customEvent = new CustomEvent('emit-event', eventData);
-        window.dispatchEvent(customEvent);
-    }
+  
 }

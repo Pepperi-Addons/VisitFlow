@@ -1,13 +1,19 @@
 import { PapiClient, InstalledAddon, Relation } from '@pepperi-addons/papi-sdk'
 import { Client } from '@pepperi-addons/debug-server';
+import { FlowService } from './flow.service';
+import { 
+    VISIT_FLOWS_TABLE_NAME,
+    VISIT_FLOWS_BASE_TABLE_NAME 
+} from 'shared';
 
 export class RelationsService {
-
-    papiClient: PapiClient
+    //private _client: Client;
+    private _papiClient: PapiClient
     bundleFileName = '';
 
     constructor(private client: Client) {
-        this.papiClient = new PapiClient({
+        //this._client = client;
+        this._papiClient = new PapiClient({
             baseURL: client.BaseURL,
             token: client.OAuthAccessToken,
             addonUUID: client.AddonUUID,
@@ -18,9 +24,30 @@ export class RelationsService {
         this.bundleFileName = `file_${this.client.AddonUUID}`;
     }
     
+    async upsetRelationAndScheme(install = true) {
+        if (install) {
+            await this.createSchemeTables();
+        }
+        //await this.upsertUserEventsRelation(); REM TEMP
+        await this.upsertBlockRelation('VisitFlow', true);
+        
+    }
+
+    private async createSchemeTables() {
+        const flowService = new FlowService(this.client);
+       
+        await flowService.createSchemas();        
+        await flowService.upsertUDCs();
+        const type = await flowService.createATD();
+        
+        if (type?.TypeID) {         
+            await flowService.createTSAFields(type.TypeID);
+        }        
+    } 
+
     // For page block template
     private async upsertRelation(relation): Promise<any> {
-        return await this.papiClient.post('/addons/data/relations', relation);
+        return await this._papiClient.post('/addons/data/relations', relation);
     }
 
     private getCommonRelationProperties(
@@ -59,6 +86,19 @@ export class RelationsService {
         return await this.upsertRelation(blockRelation);
     }
 
+    private async upsertUserEventsRelation() {
+        const userEventsRelation: Relation = {
+            RelationName: "UDCEvents",
+            Name: VISIT_FLOWS_BASE_TABLE_NAME,
+            Description: `The user events`,
+            Type: "AddonAPI",
+            AddonUUID: this.client.AddonUUID,
+            AddonRelativeURL: '/api/visit_flow_user_events',
+        }; 
+        
+        await this.upsertRelation(userEventsRelation);
+    }
+
     private async upsertBlockRelation(blockRelationName: string, isPageBlock: boolean): Promise<any> {
         const blockName = 'Block';
 
@@ -88,8 +128,8 @@ export class RelationsService {
 
         // For page block use this.
         // // TODO: change to block name (this is the unique relation name and the description that will be on the block).
-        const blockRelationName = 'VisitFlow';
-        await this.upsertBlockRelation(blockRelationName, true);
+        //const blockRelationName = 'VisitFlow';
+        await this.upsertBlockRelation(VISIT_FLOWS_TABLE_NAME, true);
 
         // For addon block use this.
         // // TODO: change to block name (this is the unique relation name and the description that will be on the block).

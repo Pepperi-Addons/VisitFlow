@@ -1,16 +1,16 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { IVisitFlowActivity } from '../../visit-flow/visit-flow.model';
+import { IVisitFlowStep } from 'shared';
 
-@Pipe({ name: 'activityStatusIcon' })
-export class ActivityStatusIconPipe implements PipeTransform {
-    transform(activity: IVisitFlowActivity) {
-        if (activity.Disabled) {
+@Pipe({ name: 'stepStatusIcon' })
+export class StepStatusIconPipe implements PipeTransform {
+    transform(step: IVisitFlowStep) {
+        if (step.Disabled) {
             return 'system_lock';
         }
-        if (activity.Mandatory && !activity.Completed) {
+        if (step.Mandatory && !step.Completed) {
             return 'system_must';
         }
-        if (activity.Completed) {
+        if (step.Completed) {
             return 'system_ok';
         }
         return 'system_flag';        

@@ -19,10 +19,12 @@ export class VisitFlowComponent implements OnInit {
             if (value?.configuration?.udcFlow) {
                 this._visitFlowService.loadVisits(value.configuration.udcFlow)
                     .then(
-                        res => {
-                            console.log('res', res);
-                            if (res?.visits) {
-                                this._visitFlowService.visits = res.visits;
+                        res => {    
+                            console.log('res', res);                        
+                            if (res?.Status === 'success' && res.Visits) {
+                                this._visitFlowService.visits = res.Visits;
+                            } else if (res?.Status === 'failure') {
+                                this.errorMessage = res.Error;
                             }
                         }
                     )
@@ -47,6 +49,10 @@ export class VisitFlowComponent implements OnInit {
         return this._visitFlowService.selectedVisit;
     }
     
+    get accountUUID() {
+        return this._visitFlowService.accountUUID;
+    }
+
     errorMessage = '';
 
     constructor(private _visitFlowService: VisitFlowService) {
@@ -58,7 +64,7 @@ export class VisitFlowComponent implements OnInit {
     }
 
     onVisitSelected(flow) {
-        console.log('onFlowSelected', flow);
+        //console.log('onFlowSelected', flow);
         this._visitFlowService.selectedVisit = flow;
     }   
 
