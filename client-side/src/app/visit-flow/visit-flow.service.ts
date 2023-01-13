@@ -37,11 +37,11 @@ export class VisitFlowService {
         //
     }
 
-    loadVisits(UDCName: string) {
-        console.log('loadVisits', UDCName);
+    loadVisits(resourceName: string) {
+        console.log('loadVisits', resourceName);
         console.log('this._accountUUID', this._accountUUID);
         return this._addonService.emitEvent(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD, {
-            UDCName: UDCName,
+            ResourceName: resourceName,
             AccountUUID: this._accountUUID
         });
     }    

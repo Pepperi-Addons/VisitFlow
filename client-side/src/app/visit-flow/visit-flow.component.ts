@@ -2,6 +2,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { VisitFlowService } from './visit-flow.service';
 import { of } from 'rxjs';
+import { PepLayoutService, PepScreenSizeType } from '@pepperi-addons/ngx-lib';
 
 
 @Component({
@@ -13,29 +14,22 @@ import { of } from 'rxjs';
 export class VisitFlowComponent implements OnInit {
     @Input()
     set hostObject(value: any) {
-        console.log('hostObject', value);   
+        console.log('hostObject', value);
         if (value?.pageParameters?.AccountUUID) {
-            this._visitFlowService.accountUUID = value.pageParameters.AccountUUID;
-            if (value?.configuration?.udcFlow) {
-                this._visitFlowService.loadVisits(value.configuration.udcFlow)
-                    .then(
-                        res => {    
-                            console.log('res', res);                        
-                            if (res?.Status === 'success' && res.Visits) {
-                                this._visitFlowService.visits = res.Visits;
-                            } else if (res?.Status === 'failure') {
-                                this.errorMessage = res.Error;
-                            }
-                        }
-                    )
-            } else {
-                // no udc selected;
-                this.errorMessage = 'No UDC selected';
-            } 
-        } else {
-            //no account uuid
-            this.errorMessage = 'No account selected';
-        } 
+            this._visitFlowService.accountUUID = value.pageParameters.AccountUUID;;
+        }
+        let resourceName = '';
+        if (value?.configuration?.udcFlow) { //TEMP - change to resourceName input
+            resourceName = value?.configuration?.udcFlow;
+        }
+        this._visitFlowService.loadVisits(resourceName)
+            .then(
+                res => {
+                    if (res?.Visits?.length) {
+                        this._visitFlowService.visits = res.Visits;
+                    }
+                }
+            )
         
     }
 
@@ -48,14 +42,17 @@ export class VisitFlowComponent implements OnInit {
     get selectedVisit() {
         return this._visitFlowService.selectedVisit;
     }
-    
+
     get accountUUID() {
         return this._visitFlowService.accountUUID;
     }
 
     errorMessage = '';
 
-    constructor(private _visitFlowService: VisitFlowService) {
+    constructor(private _visitFlowService: VisitFlowService, public layoutService: PepLayoutService) {
+        this.layoutService.onResize$.subscribe((size: PepScreenSizeType) => {
+            console.log('on screen changed', size);
+        });
         //
     }
 
@@ -66,6 +63,6 @@ export class VisitFlowComponent implements OnInit {
     onVisitSelected(flow) {
         //console.log('onFlowSelected', flow);
         this._visitFlowService.selectedVisit = flow;
-    }   
+    }
 
 }

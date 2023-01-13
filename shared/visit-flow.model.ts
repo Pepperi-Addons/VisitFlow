@@ -18,9 +18,9 @@ export const USER_ACTION_ON_VISIT_FLOW_STEP_CLICK = 'OnVisitFlowStepClick';
 
 export interface IVisitFlow {  
     Key: string;    
-    Title: string;
-    InProgress: boolean;    
-    Groups: IVisitFlowGroup[]    
+    Title: string;    
+    Groups: IVisitFlowGroup[];
+    [key: string]: any;    
 }
 
 export interface IVisitFlowGroup {
@@ -38,6 +38,11 @@ export interface IVisitFlowStep {
     Completed: boolean;
     DepandsOnStep?: number;
     [key: string]: any;
+}
+
+export interface IVisitFlowSelectedStep {
+    GroupIndex: number,
+    StepIndex: number;
 }
 
 export type VisitFlowResourceType =

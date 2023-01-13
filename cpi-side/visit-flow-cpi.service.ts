@@ -25,25 +25,25 @@ class VisitFlowService {
 
     /**
      * gets UDC visits. in case of an in-progress visit - returns the in-progress visits only
-     * @param UDCName udc name
+     * @param resourceName udc resource name
      * @returns visit flow(s)
      */
-    async getVisits(UDCName: string) {
-        const inProgressVisit = await this.getInProgressVisitFlow(UDCName);
+    async getVisits(resourceName: string) {
+        const inProgressVisit = await this.getInProgressVisitFlow(resourceName);
         return this.createVisitFlows(inProgressVisit);
     }
 
     /**
      * get in-progress visit if exists, null otherwise
-     * @param UDCName udc name
+     * @param resourceName udc resource name
      * @returns in-progress visit object
      */
-    private async getInProgressVisitFlow(UDCName: string) {
+    private async getInProgressVisitFlow(resourceName: string) {
         let inProgressVisit: IInProgressVisit | null = null;
 
         try {
             const res: any = await Promise.all([
-                pepperi.resources.resource(UDCName).get({ where: 'Active = true' }),
+                pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
             debugger;
@@ -108,44 +108,6 @@ class VisitFlowService {
             visitFlows = await this.convertToVisitFlows(udcVisits, inProgressVisit !== null);
             debugger;
 
-            //TODO - rebuild with groups
-            /*
-            for (let visit of udcVivisits) {
-                const steps = visit.steps;
-                let visitActivities: IVisitFlowActivity[] = [];
-                let foundStarter = false;
-                for (let i = 0; i < steps.length; i++) {
-                    let step: IVisitFlowActivity = _.clone(steps[i]);
-                    step.Completed = await this.isStepCompleted(
-                        steps[i].ResourceType,
-                        steps[i].ResourceTypeID,
-                        inProgressVisit && inProgressVisit.CreationDateTime ? inProgressVisit.CreationDateTime : '',
-                        inProgressVisit !== null,
-                        steps[i].Completed);
-                    if (inProgressVisit) {
-                        //TODO - lock end activity if found mandatory incomplete
-                    } else {
-                        //in case visit isnt in progress - disable all steps except for the first start step
-                        if (steps[i].ResourceTypeID === VISIT_FLOW_MAIN_ACTIVITY && !foundStarter) {
-                            step.Disabled = false;
-                            foundStarter = true;
-                        } else {
-                            step.Disabled = true;
-                        }
-                    }
-
-                    visitActivities.push(step);
-                }
-                visitFlows.push({
-                    Key: visit.Key,
-                    Name: visit.Name,
-                    Title: visit.Description,
-                    InProgress: inProgressVisit !== null,
-                    CreationDateTime: inProgressVisit && inProgressVisit.CreationDateTime ? inProgressVisit.CreationDateTime : null,
-                    Activities: [...visitActivities]
-                });
-            } */
-
             return visitFlows;
         } catch (err: any) {
             throw new Error(err.message);
@@ -160,6 +122,7 @@ class VisitFlowService {
             for (let i = 0; i < steps.length; i++) {
                 //let step: any = _.clone(steps[i]);
                 if (inProgress) {
+                    //debugger;
                     const resource = await this.getResourceItem(
                         steps[i].ResourceType,
                         steps[i].ResourceTypeID,
@@ -172,7 +135,7 @@ class VisitFlowService {
                 } else {
                     steps[i].Activities = [];
                     steps[i].Completed = false;
-                    //in case visit isnt in progress - disable all steps except for the first start step
+                    //in case visit isn't in progress - disable all steps except for the first start step
                     if (steps[i].ResourceType === 'activities' && steps[i].ResourceTypeID === VISIT_FLOW_MAIN_ACTIVITY && !starterFound) {
                         steps[i].Disabled = false;
                         starterFound = true;
@@ -248,8 +211,7 @@ class VisitFlowService {
                 }
                 visits.push({
                     Key: visit.Key,
-                    Title: visit.Description,
-                    InProgress: isInProgress,
+                    Title: visit.Description,                    
                     Groups: groups
                 });
             }
@@ -298,33 +260,11 @@ class VisitFlowService {
     }
 
     private async getResourceItem(resourceType: string, resourceTypeID: string, creationDateTime: string) {
-        try {
-            /*const searchObject = {
-                fields: ['UUID', 'StatusName'],
-                filter: {
-                    Operation: 'AND',
-                    LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: '>=', Values: [creationDateTime] },
-                    RightNode: {
-                        Operation: 'AND',
-                        LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] },
-                        RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
-                    }
-                },
-                sorting: [{ Field: 'CreationDateTime', Ascending: true }]
-            } */
+        try {           
             let startDateTime = creationDateTime ? creationDateTime : this.getToday();
             let item: any | null = null;
             let res: any;
-            debugger;
-
-            /*if (creationDateTime) {
-                startDateTime = creationDateTime;
-            } else {
-                let today = new Date();
-                today.setHours(0, 0, 0, 0);
-                startDateTime = today.toISOString();
-                debugger;
-            } */
+           
             switch (resourceType) {
                 case 'activities':
                     res = await pepperi.api.activities.search({
@@ -345,7 +285,7 @@ class VisitFlowService {
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
                         pageSize: 1
                     });
-                    debugger;
+                    //debugger;
                     if (res?.success && res.objects?.length) {
                         if (creationDateTime) {
                             if (res.objects[0].CreationDateTime >= creationDateTime) {
@@ -387,19 +327,30 @@ class VisitFlowService {
                         }
                     }
                     break;
-                case 'surveys':
-                    res = await pepperi.resources.resource('Surveys').search({
-                        Fields: ['Key', 'Status', 'CreationDateTime', 'AccountUUID'],
-                        //Where: `"Template='${resourceTypeID}' And AccountUUID='${this._accountStr}' And CreationDateTime >= '${creationDateTime}'"`                        
-                        Where: `Template='${resourceTypeID}'`
+                default:
+                    res = await pepperi.resources.resource(resourceType).search({
+                        Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
+                        //Where: `"Template='${resourceTypeID}' And Account='${this._accountStr}' And CreationDateTime >= '${startDateTime}'"`                        
+                        Where: `Template='${resourceTypeID}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
 
                     });
+                    debugger;
                     if (res?.Objects?.length) {
-                        //debugger;
+                        debugger;
 
-                        let templates = res.Objects.filter(template => template.AccountUUID === this._accountUUID && template.CreationDateTime >= startDateTime);
-                        //debugger;
+                        //let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime);
+                        let templates: any[] = res.Objects;
+                        debugger;
                         if (templates.length) {
+                            templates.sort((a, b) => {                                
+                                if (a.CreationDateTime > b.CreationDateTime) {
+                                    return -1;                                    
+                                } else if (a.CreationDateTime < b.CreationDateTime) {
+                                    return 1;
+                                } else {
+                                    return 0;
+                                }
+                            })
                             item = {
                                 UUID: templates[0].Key,
                                 StatusName: templates[0].Status || ''
@@ -430,12 +381,20 @@ class VisitFlowService {
         }
     }
 
+    async getStepUrl(client: IClient, step: any, visitUUID: string) {
+        if (step?.ResourceType === 'activities' && step?.ResourceTypeID === VISIT_FLOW_MAIN_ACTIVITY) {
+            return this.getStartVisitUrl(step, visitUUID);
+        } else {            
+            return this.getActivityUrl(client, step);
+        }
+    }
+
     /**
      * returns startEnd activity, if exists return the item otherwise creates a new one
      * @param visitUUID 
      * @returns 
      */
-    async getStartVisitUrl(step: any, visitUUID: string) {
+    private async getStartVisitUrl(step: any, visitUUID: string) {
         try {
             let url = '/activities/details/';
             let activity: any = null;
@@ -496,7 +455,7 @@ class VisitFlowService {
         }
     }
 
-    async getActivityUrl(client: IClient, step: any) {
+    private async getActivityUrl(client: IClient, step: any) {
         let url = this.getBaseUrl(step.ResourceType);
         let resource: any;
         let catalogName = '';
@@ -510,10 +469,9 @@ class VisitFlowService {
                 if (step.ResourceType === 'transactions') {
                     catalogName = await this.chooseCatalog(client);
                     //await client?.alert('outer choose catalog', catalogName);
-                    if (!catalogName) {
-                        //catalogName = 'Default Catalog';                         
+                    /*if (!catalogName) {                                             
                         throw new Error('Catalog was not selected');
-                    }
+                    } */
                 }
                 debugger;
                 const newResource = await this.createResource(step.ResourceType, step.ResourceTypeID, catalogName);
@@ -552,8 +510,8 @@ class VisitFlowService {
                 return `/${resourceType}/details/`;
             case 'transactions':
                 return `/${resourceType}/scope_items/`;
-            case 'surveys':
-                return `${resourceType}?survey_key=`;
+            default:
+                return 'surveys?survey_key=';
         }
     }
 
@@ -565,7 +523,7 @@ class VisitFlowService {
                 addonBlockName: 'ResourcePicker',
                 hostObject: {
                     resource: 'catalogs',
-                    view: '77119b6b-ebf3-4b42-9a18-f0103c1602dc',
+                    //view: '77119b6b-ebf3-4b42-9a18-f0103c1602dc',
                     selectionMode: 'single', // multi
                     selectedObjectKeys: [],
                 },
@@ -576,20 +534,23 @@ class VisitFlowService {
             const catalogResult = await client?.showModal(templateModalOptions);
             //await client?.alert('catalog choosed result', '');
             // If catalog template was choosen
-            if (!catalogResult.canceled && catalogResult.result.length > 0) {
-                //await client?.alert('parsing catalog', '');
-                const resObject = JSON.parse(catalogResult.result);
-                if (resObject?.selectedObjectKeys.length > 0) {
-                    catalogKey = resObject.selectedObjectKeys[0];
-                    //await client?.alert('catalog key', catalogKey);
-                    //await client?.alert('before searching for catalog name', catalogKey);
-                    const catalog: any = await pepperi.resources.resource('catalogs').key(catalogKey).get();
-                    //await client?.alert('after searching for catalog name', '');            
-                    if (catalog?.ExternalID) {
-                        catalogName = catalog.ExternalID;
-                        //await client?.alert('finding catalog name', catalogName);     
+            if (!catalogResult.canceled) {
+                if (catalogResult.result.length > 0) {
+                    const resObject = JSON.parse(catalogResult.result);
+                    if (resObject?.selectedObjectKeys.length > 0) {
+                        catalogKey = resObject.selectedObjectKeys[0];
+                        //await client?.alert('catalog key', catalogKey);
+                        //await client?.alert('before searching for catalog name', catalogKey);
+                        const catalog: any = await pepperi.resources.resource('catalogs').key(catalogKey).get();
+                        //await client?.alert('after searching for catalog name', '');            
+                        if (catalog?.ExternalID) {
+                            catalogName = catalog.ExternalID;
+                            //await client?.alert('finding catalog name', catalogName);     
+                        }
                     }
-                }
+                } else {
+                    throw new Error('Catalog was not selected');
+                }                
             }
 
             return catalogName;
@@ -635,10 +596,12 @@ class VisitFlowService {
                     });
                     break;
                 }
-                case 'surveys':
-                    const newSurvey = await pepperi.resources.resource('Surveys').post({
+                default:                                    
+                    const newSurvey = await pepperi.resources.resource(resourceType).post({
+                        Creator: '00000000-0000-0000-0000-000000000000', //TEMP
                         Template: resourceTypeID,//templateKey
-                        AccountUUID: this._accountUUID
+                        Account: this._accountUUID,
+                        StatusName: 'InCreation' //TEMP
                     });
                     debugger;
                     if (newSurvey?.Key) {

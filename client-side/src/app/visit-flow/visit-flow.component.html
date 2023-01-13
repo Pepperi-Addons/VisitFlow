@@ -1,5 +1,5 @@
-<div class="visit-container">
-    <div *ngIf="!errorMessage" class="content">
+<div class="visits-container">
+    <ng-container *ngIf="!errorMessage">
         <ng-container *ngIf="visits.length">
             <ng-container *ngIf="selectedVisit else visitSelection">
                 <ng-container *ngTemplateOutlet="displayVisit; context: {visit: selectedVisit, showReturn: true}">
@@ -13,23 +13,22 @@
                     <ng-container *ngTemplateOutlet="displayVisit; context: {visit: visits[0], showReturn: false}">
                     </ng-container>
                 </ng-container>
-                <ng-container *ngIf="visits.length > 1">
-                    <!-- <div class="visit-selection">
-                        <div class="content"> -->
-                            <div class="header">
-                                Select Visit
-                            </div>
-                            <div class="items-container">
-                                <pep-button *ngFor="let visit of visits" [value]="visit.Title" styleType="regular"
-                                    sizeType="md" [disabled]="false" (buttonClick)="onVisitSelected(visit)">
-                                </pep-button>
-                            </div>
-                        <!-- </div>
-                    </div> -->
-                </ng-container>
+                <div *ngIf="visits.length > 1" class="visit-selection">
+                    <!-- <div class="content"> -->
+                    <div class="header">
+                        Select Visit
+                    </div>
+                    <div class="items-container">
+                        <pep-button *ngFor="let visit of visits" [value]="visit.Title" styleType="regular" sizeType="md"
+                            [disabled]="false" (buttonClick)="onVisitSelected(visit)">
+                        </pep-button>
+                    </div>
+                    <!-- </div> -->
+
+                </div>
             </ng-template>
         </ng-container>
-    </div>
+    </ng-container>
     <div *ngIf="errorMessage" class="error-message">
         {{errorMessage}}
     </div>

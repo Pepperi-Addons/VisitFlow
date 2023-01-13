@@ -9,18 +9,18 @@ import { VisitFlowEditorService } from './visit-flow-editor.service';
 export class VisitFlowEditorComponent implements OnInit {    
     @Input()
     set hostObject(value: any) {
-        console.log('hostObject', value?.configuration?.udcFlow);
-        if (value?.configuration?.udcFlow) {
-            this.selectedUdcFlow = value.configuration.udcFlow;            
+        console.log('hostObject', value?.configuration?.resourceName);
+        if (value?.configuration?.resourceName) {
+            this.selectedResourceName = value.configuration.resourceName;            
         } else {
-            this.selectedUdcFlow = '';
+            this.selectedResourceName = '';
         }        
     }    
 
     @Output() hostEvents: EventEmitter<any> = new EventEmitter<any>();    
 
     flows$;
-    selectedUdcFlow = '';
+    selectedResourceName = '';
 
     constructor(private _visitFlowEditorService: VisitFlowEditorService) {
     }
@@ -32,13 +32,13 @@ export class VisitFlowEditorComponent implements OnInit {
     ngOnChanges(e: any): void {
     }  
 
-    onUDCFlowSelect(selected: string) {
-        console.log('onUDCFlowSelect', selected);
+    onUDCResourceSelect(selected: string) {
+        console.log('onUDCResourceSelect', selected);
 
         this.hostEvents.emit({
             action: 'set-configuration',
             configuration: {
-                udcFlow: selected
+                resourceName: selected
             }
         });
 

@@ -2,7 +2,7 @@
     <div class="editor-desc">
         Display a set of activities to be formed
     </div>
-    <pep-select class="udc-flows" [key]="'select1'" [value]="selectedUdcFlow" [label]="'UDC FLows'"
-        [options]="flows$ | async" (valueChange)="onUDCFlowSelect($event)">
+    <pep-select class="udc-flows" [key]="'select1'" [value]="selectedResourceName" [label]="'UDC FLows'"
+        [options]="flows$ | async" (valueChange)="onUDCResourceSelect($event)">
     </pep-select>
 </div>

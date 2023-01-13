@@ -28,7 +28,7 @@ export class RelationsService {
         if (install) {
             await this.createSchemeTables();
         }
-        //await this.upsertUserEventsRelation(); REM TEMP
+        await this.upsertUserEventsRelation();
         await this.upsertBlockRelation('VisitFlow', true);
         
     }

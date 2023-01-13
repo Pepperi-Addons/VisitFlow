@@ -28,7 +28,8 @@ export class VisitDetailsComponent implements OnInit {
         return this._visitDetailsService.groups;
     }
 
-    selectedGroup: IVisitFlowGroup;
+    //selectedGroup: IVisitFlowGroup;
+    selectedGroupIndex = -1;
 
     constructor(
         private _visitDetailsService: VisitDetailsService,
@@ -40,15 +41,19 @@ export class VisitDetailsComponent implements OnInit {
         
     }
     
-    onGroupClicked(group) {
-        console.log('onGroupClicked', group);
-        this.selectedGroup = group;
+    onGroupClicked(index: number) {
+        console.log('onGroupClicked', index);
+        //this.selectedGroup = group;
+        this.selectedGroupIndex = index;
     }
 
-    async onStepClicked(step: IVisitFlowStep) {
-        console.log('onStepClicked', step);
-
-        this._visitDetailsService.onStepClicked(step);                        
+    onStepClicked(index: number) {
+        console.log('onStepClicked', this.groups[this.selectedGroupIndex].Steps[index]);
+        let selectedStep = {
+            GroupIndex: this.selectedGroupIndex,
+            StepIndex: index
+        };
+        this._visitDetailsService.onStepClicked(selectedStep);                        
     }
 
     onReturnToVisitListClicked() {
@@ -56,6 +61,8 @@ export class VisitDetailsComponent implements OnInit {
     }    
 
     onReturnToGroupsClicked() {
-        this.selectedGroup = null;
+        //this.selectedGroup = null;
+        this.selectedGroupIndex = -1;
+
     }    
 }

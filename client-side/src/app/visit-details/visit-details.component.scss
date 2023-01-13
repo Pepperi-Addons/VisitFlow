@@ -1,9 +1,14 @@
 @use '@pepperi-addons/ngx-lib/src/core/style/abstracts/variables';
 @use '@pepperi-addons/ngx-lib/src/core/style/abstracts/mixins';
 
-.flow-container {
+:host {
+    width: 100%;
+}
+
+.visit-container {
     /*height: 100%;*/
     display: flex;
+    justify-content: center;
     gap: variables.$spacing-lg;    
     /*margin: variables.$spacing-2xl variables.$spacing-lg variables.$spacing-lg variables.$spacing-lg;*/
 
@@ -38,13 +43,13 @@
                 }     
             }
 
-            &.group {
-                width: 343px;
-            }
+            /*&.group {
+                width: 360px;
+            } 
 
             &.activity {
                 width: 411px;
-            }
+            } */
             
             &.selected {
                 ::ng-deep.mat-button {
@@ -67,15 +72,16 @@
                 }
             }   
             
+            /*
             @media (max-width: variables.$screen-max-size-2xs) {
                 &.group {
                     width: 288px;
-                }
+                } 
 
                 &.activity {
                     width: 288px;
-                }
-            }
+                } 
+            }*/
         }
 
         .return-to-list {
@@ -107,7 +113,14 @@
         }
     }    
 
+    .flow-groups {
+        max-width: 360px;        
+        width: 40%;
+    }
+
     .group-steps {
+        max-width: 540px;
+        width: 60%;
         background-color: lightgray;
         /*width: 364px; */
         padding: variables.$spacing-lg;
@@ -115,24 +128,36 @@
 
     @media (max-width: variables.$screen-max-size-2xs) {
         .flow-groups {
+            width: 100%;
+            /*
             &.hide-groups {
                 display: none;
-            }
+            } */
         }
 
         .group-steps {
+            max-width: 360px;        
+            width: 100%;
             background-color: unset;           
             padding: 0;
          }
     }
 
-  
-    
-    /*
-    pep-button {        
-        ::ng-deep.mat-button-wrapper {
-            justify-content: start;
-        }                
-    } */
 }
 
+@media (max-width: variables.$screen-max-size-2xs) {
+    .visit-container {
+        margin: 0;
+        
+        &.selected {
+            .flow-groups {
+                display: none;
+            }
+        }
+        &:not(.selected) {
+            .group-steps {
+                display: none;
+            }
+        }
+    }
+}

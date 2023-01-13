@@ -20,19 +20,16 @@ export class VisitDetailsService {
 
     get groups() {
         return this._visit.Groups;
-    }
-
-    get isInProgress() {
-        return this._visit.InProgress;
-    }
+    }   
 
     constructor(private _addonService: PepAddonService) {}    
 
-    onStepClicked(step: IVisitFlowStep) {
+    onStepClicked(selectedStep: any) {
+        console.log('SelectedStep', selectedStep);
         this._addonService.emitEvent(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK, {
             AccountUUID: this._accountUUID,
-            VisitUUID: this._visit.Key, //relevant in case of starting a visit
-            Step: step            
+            Visit: this._visit,
+            SelectedStep: selectedStep            
         }).then(res => {
             console.log('res', res);
             if (res?.Status === 'failure') {

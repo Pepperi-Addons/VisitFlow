@@ -284,10 +284,20 @@ export class FlowService {
         const events = {
             "Events": [{
                 Title: 'On visit flow data load',
-                EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD
+                EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD,
+                EventData: {
+                    Visits: {
+                        Type: 'Array'
+                    }
+                }
             }, {
                 Title: 'On visit step click',
-                EventKey: USER_ACTION_ON_VISIT_FLOW_STEP_CLICK
+                EventKey: USER_ACTION_ON_VISIT_FLOW_STEP_CLICK,
+                EventData: {
+                    Data: {
+                        Type: 'Object'
+                    }
+                }
             }]
         }
 

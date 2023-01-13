@@ -17,36 +17,7 @@ import { FlowService } from './services/flow.service';
 export async function install(client: Client, request: Request): Promise<any> {
     try {
         const relationService = new RelationsService(client);
-        await relationService.upsetRelationAndScheme();
-        /*
-        const papiClient = new PapiClient({
-            baseURL: client.BaseURL,
-            token: client.OAuthAccessToken,
-            addonUUID: client.AddonUUID,
-            addonSecretKey: client.AddonSecretKey,
-            actionUUID: client.ActionUUID
-        }); */
-        /*
-        const flowService = new FlowService(client);
-        //TODO - check if exists before creating
-        //create 3 abstracts shcemas (without steps field)
-        await flowService.createSchemas();
-        //create 3 udcs - 
-        // 1 - Steps - that inherits from Steps shcema (from type contained)
-        // 2 - Flows inherits from Flows shcema with property of name steps (array of type contained resource for resource = Steps)
-        // 3 - Groups that inherit from Groups shcema 
-        await flowService.upsertUDCs();
-
-        const type = await flowService.createATD();
-        //const type = await createATD(papiClient);
-        if (type?.TypeID) {
-            //await createTSAFields(type.TypeID, papiClient);
-            await flowService.createTSAFields(type.TypeID);
-        }
-        //
-        const service = new RelationsService(client);
-        await service.upsertRelations();
-        */
+        await relationService.upsetRelationAndScheme();        
 
     } catch (err) {
         throw new Error(`Failed to install addon. error - ${err}`);
