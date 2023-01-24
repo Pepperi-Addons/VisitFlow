@@ -19,8 +19,8 @@ export async function install(client: Client, request: Request): Promise<any> {
         const relationService = new RelationsService(client);
         await relationService.upsetRelationAndScheme();        
 
-    } catch (err) {
-        throw new Error(`Failed to install addon. error - ${err}`);
+    } catch (err: any) {
+        throw new Error(`Failed to install addon. error - ${err.message}`);
     }
 
     return { success: true, resultObject: {} };
@@ -34,8 +34,8 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
     try {              
         const relationService = new RelationsService(client);
         await relationService.upsetRelationAndScheme(false);
-    } catch (err) {
-        throw new Error(`Failed to upgrade addon. error - ${err}`);
+    } catch (err: any) {
+        throw new Error(`Failed to upgrade addon. error - ${err.message}`);
     }
 
     return { success: true, resultObject: {} }

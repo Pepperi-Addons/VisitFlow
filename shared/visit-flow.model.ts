@@ -26,13 +26,14 @@ export interface IVisitFlow {
 export interface IVisitFlowGroup {
     Title: string;
     Steps: IVisitFlowStep[]; 
+    [key: string]: any;  
 }
 
 export interface IVisitFlowStep {
     Title: string;
     ResourceType: VisitFlowResourceType;
     ResourceTypeID: string;
-    Activities: string[];
+    BaseActivities: string[];
     Mandatory: boolean;
     Disabled?: boolean;
     Completed: boolean;

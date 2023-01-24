@@ -3,6 +3,7 @@ import { Client, Request } from '@pepperi-addons/debug-server';
 import { ApiFieldObject, PapiClient, AddonDataScheme, SchemeFieldTypes } from "@pepperi-addons/papi-sdk";
 import { ActivityType, VisitFlowTSAFields } from '../metadata';
 import { 
+    VISIT_FLOW_MAIN_ACTIVITY,
     VISIT_FLOW_STEPS_TABLE_NAME, 
     VISIT_FLOW_STEPS_BASE_TABLE_NAME,
     VISIT_FLOW_GROUPS_TABLE_NAME,
@@ -29,7 +30,6 @@ export class FlowService {
     }
 
     async createSchemas() {
-
         const flowsScheme = this.getFlowsSchema();
         const groupsScheme = this.getGroupsSchema();
         const stepsScheme = this.getStepsSchema();
@@ -267,8 +267,24 @@ export class FlowService {
     }
 
     async createATD() {
-        const url = `/meta_data/activities/types`;
-        return await this._papiClient.post(url, ActivityType);
+        const fetchUrl = `/types?where=Name='${VISIT_FLOW_MAIN_ACTIVITY}'&include_deleted=1`;
+        const startEndActivities = await this._papiClient.get(fetchUrl);              
+        if (startEndActivities?.length) {
+            if (startEndActivities[0].Hidden === true) {
+                const currentItem = {
+                    InternalID: startEndActivities[0].InternalID,
+                    Hidden: false
+                }
+                await this._papiClient.post('/meta_data/activities/types', currentItem);
+                return null;
+            } else {
+                return null;
+            }            
+        } else {                        
+            const url = `/meta_data/activities/types`;
+            return await this._papiClient.post(url, ActivityType);
+        }
+        
     }
 
     async createTSAFields(atdId: string) {

@@ -1,6 +1,51 @@
 import { Client, Request } from '@pepperi-addons/debug-server'
+import { VisitFlowApiService } from './services/visit-flow-api.service';
 import { FlowService } from './services/flow.service';
+import { 
+    VISIT_FLOWS_BASE_TABLE_NAME,
+    VISIT_FLOW_GROUPS_BASE_TABLE_NAME
+ } from 'shared'; 
+ //import { UtilsService } from 'shared/services/utils.service';
 
+export async function visit_flows(client: Client, request: Request) {
+    const service = new VisitFlowApiService(client, request);
+    const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);  
+    //const utilsService = new UtilsService(request);
+    const findOptions = service.buildFinOptionsQuery();      
+    resource.getResources(findOptions);
+}
+
+export async function get_visit_flows_by_key(client: Client, request: Request) {
+    const service = new VisitFlowApiService(client, request);
+    const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);
+    resource.getResourceByKey(request.query.key);
+}
+
+export async function visit_flows_search(client: Client, request: Request) {
+    const service = new VisitFlowApiService(client, request);
+    const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);
+    resource.searchResources(request.body);
+}
+
+export async function visit_flows_groups(client: Client, request: Request) {
+    const service = new VisitFlowApiService(client, request);
+    const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
+    //const utilsService = new UtilsService(request);
+    const findOptions = service.buildFinOptionsQuery();  
+    resource.getResources(findOptions);
+}
+
+export async function get_visit_flow_groups_by_key(client: Client, request: Request) {
+    const service = new VisitFlowApiService(client, request);
+    const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
+    resource.getResourceByKey(request.query.key);
+}
+
+export async function visit_flow_groups_search(client: Client, request: Request) {
+    const service = new VisitFlowApiService(client, request);
+    const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
+    resource.searchResources(request.body);
+}
 
 export async function visit_flow_user_events(client:Client, request: Request): Promise<any> {
     try {

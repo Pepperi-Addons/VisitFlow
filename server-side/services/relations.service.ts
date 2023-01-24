@@ -25,24 +25,32 @@ export class RelationsService {
     }
     
     async upsetRelationAndScheme(install = true) {
-        if (install) {
-            await this.createSchemeTables();
+        try {
+            if (install) {
+                await this.createSchemeTables();
+            }
+            await this.upsertUserEventsRelation();
+            await this.upsertBlockRelation('VisitFlow', true);
+        } catch (err: any) {
+            throw new Error(err.message);
         }
-        await this.upsertUserEventsRelation();
-        await this.upsertBlockRelation('VisitFlow', true);
+        
         
     }
 
     private async createSchemeTables() {
-        const flowService = new FlowService(this.client);
-       
-        await flowService.createSchemas();        
-        await flowService.upsertUDCs();
-        const type = await flowService.createATD();
-        
-        if (type?.TypeID) {         
-            await flowService.createTSAFields(type.TypeID);
-        }        
+        try {
+            const flowService = new FlowService(this.client);              
+            const type = await flowService.createATD();   
+                
+            if (type?.TypeID) {         
+                await flowService.createTSAFields(type.TypeID);
+                await flowService.createSchemas();        
+                await flowService.upsertUDCs();
+            }    
+        } catch (err: any) {
+            throw new Error(err.message);
+        }            
     } 
 
     // For page block template

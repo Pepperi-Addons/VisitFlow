@@ -1,13 +1,18 @@
 import '@pepperi-addons/cpi-node';
+import { Request } from '@pepperi-addons/debug-server'
 import VisitFlowService from './visit-flow-cpi.service';
+import { PapiService } from './papi.service';
 import {
     CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD,
     USER_ACTION_ON_VISIT_FLOW_LOAD,
     CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK,
     USER_ACTION_ON_VISIT_FLOW_STEP_CLICK,
     VISIT_FLOW_MAIN_ACTIVITY,
-    VISIT_FLOW_STEPS_TABLE_NAME
+    VISIT_FLOWS_BASE_TABLE_NAME,
+    VISIT_FLOW_STEPS_TABLE_NAME,    
+    VISIT_FLOW_GROUPS_BASE_TABLE_NAME
 } from 'shared';
+import { UtilsService } from './utils.service';
 
 export async function load(configuration: any) {
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD as any, {}, async (data): Promise<any> => {
@@ -71,8 +76,7 @@ export async function load(configuration: any) {
 
             const service = new VisitFlowService(inputData.AccountUUID);
             let url: string | undefined = undefined;
-            //await data.client?.alert('OnClientVisitFlowStepClick account', data.AccountUUID);
-            //await data.client?.alert('OnClientVisitFlowStepClick visit', data.VisitUUID);
+           
             debugger;
             if (
                 inputData?.SelectedStep?.GroupIndex >= 0 &&
@@ -106,4 +110,50 @@ router.get('/test', (req, res) => {
     res.json({
         hello: 'World'
     })
-})
+});
+
+router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}`, async (req: Request, res) => {
+    const service = new PapiService();
+    const utilsService = new UtilsService(req);
+    const findOptions = utilsService.buildFinOptionsQuery();
+    const visits = await service.getResources(findOptions);
+
+    res.json(visits);
+});
+
+router.get(`/get_${VISIT_FLOWS_BASE_TABLE_NAME}_by_key`, async (req: Request, res) => {
+    const service = new PapiService();      
+    const visits = await service.getResourceByKey(VISIT_FLOWS_BASE_TABLE_NAME, req.query.key);
+
+    res.json(visits);
+});
+
+router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}_search`, async (req: Request, res) => {
+    const service = new PapiService();       
+    const visits = await service.searchResources(req.body);
+
+    res.json(visits);
+});
+
+router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}`, async (req: Request, res) => {
+    const service = new PapiService();
+    const utilsService = new UtilsService(req);
+    const findOptions = utilsService.buildFinOptionsQuery();
+    const visits = await service.getResources(findOptions);
+
+    res.json(visits);
+});
+
+router.get(`/get_${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}_by_key`, async (req: Request, res) => {
+    const service = new PapiService();    
+    const visits = await service.getResourceByKey(VISIT_FLOW_GROUPS_BASE_TABLE_NAME, req.query.key);
+
+    res.json(visits);
+});
+
+router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}_search`, async (req: Request, res) => {
+    const service = new PapiService();    
+    const visits = await service.searchResources(req.body);
+
+    res.json(visits);
+});
