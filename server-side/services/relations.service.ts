@@ -34,8 +34,6 @@ export class RelationsService {
         } catch (err: any) {
             throw new Error(err.message);
         }
-        
-        
     }
 
     private async createSchemeTables() {

@@ -19,8 +19,8 @@ export class VisitFlowComponent implements OnInit {
             this._visitFlowService.accountUUID = value.pageParameters.AccountUUID;;
         }
         let resourceName = '';
-        if (value?.configuration?.udcFlow) { //TEMP - change to resourceName input
-            resourceName = value?.configuration?.udcFlow;
+        if (value?.configuration?.resourceName) {
+            resourceName = value.configuration.resourceName;
         }
         this._visitFlowService.loadVisits(resourceName)
             .then(

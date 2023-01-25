@@ -31,12 +31,14 @@ export async function load(configuration: any) {
                 visits = await service.getVisits(data.ResourceName);
                 debugger;
                 const eventRes: any = await pepperi.events.emit(USER_ACTION_ON_VISIT_FLOW_LOAD, {
-                    Visits: visits,
+                    Visits: { 
+                        Visits: visits
+                    },
                     ObjectType: data.ResourceName
                 }, data);
 
-                if (eventRes?.Visits) {
-                    visits = eventRes.Visits;
+                if (eventRes?.data?.Visits) {
+                    visits = eventRes.data.Visits;
                 }
 
                 debugger;
@@ -112,8 +114,8 @@ router.get('/test', (req, res) => {
     })
 });
 
-router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}`, async (req: Request, res) => {
-    const service = new PapiService();
+router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}`, async (req, res) => {
+    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);
     const utilsService = new UtilsService(req);
     const findOptions = utilsService.buildFinOptionsQuery();
     const visits = await service.getResources(findOptions);
@@ -121,22 +123,22 @@ router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}`, async (req: Request, res) => {
     res.json(visits);
 });
 
-router.get(`/get_${VISIT_FLOWS_BASE_TABLE_NAME}_by_key`, async (req: Request, res) => {
-    const service = new PapiService();      
-    const visits = await service.getResourceByKey(VISIT_FLOWS_BASE_TABLE_NAME, req.query.key);
+router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}/key/:key`, async (req, res) => {
+    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);      
+    const visits = await service.getResourceByKey(req.params.key);
 
     res.json(visits);
 });
 
-router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}_search`, async (req: Request, res) => {
-    const service = new PapiService();       
+router.post(`/${VISIT_FLOWS_BASE_TABLE_NAME}/search`, async (req, res) => {
+    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);       
     const visits = await service.searchResources(req.body);
 
     res.json(visits);
 });
 
-router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}`, async (req: Request, res) => {
-    const service = new PapiService();
+router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}`, async (req, res) => {
+    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
     const utilsService = new UtilsService(req);
     const findOptions = utilsService.buildFinOptionsQuery();
     const visits = await service.getResources(findOptions);
@@ -144,15 +146,15 @@ router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}`, async (req: Request, res) =>
     res.json(visits);
 });
 
-router.get(`/get_${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}_by_key`, async (req: Request, res) => {
-    const service = new PapiService();    
-    const visits = await service.getResourceByKey(VISIT_FLOW_GROUPS_BASE_TABLE_NAME, req.query.key);
+router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}/key/:key`, async (req, res) => {
+    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
+    const visits = await service.getResourceByKey(req.params.key);
 
     res.json(visits);
 });
 
-router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}_search`, async (req: Request, res) => {
-    const service = new PapiService();    
+router.post(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}/search`, async (req, res) => {
+    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
     const visits = await service.searchResources(req.body);
 
     res.json(visits);

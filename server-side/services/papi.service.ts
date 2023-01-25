@@ -17,9 +17,9 @@ export class PapiService<T extends AddonData> implements IApiService<T>
 		return await (this.papiClient.addons.data.uuid(this.client.AddonUUID).table(this.resourceName).key(key).get() as Promise<T>);
 	}
 	
-	async searchResources(body: any): Promise<Array<T>>
+	async searchResources(body: any): Promise<{Objects: T[], Count?: number}>
 	{
-		return await (this.papiClient.post(`/addons/data/search/${this.client.AddonUUID}/${this.resourceName}`, body) as Promise<Array<T>>);
+		return await (this.papiClient.post(`/addons/data/search/${this.client.AddonUUID}/${this.resourceName}`, body) as Promise<{Objects: T[], Count?: number}>);
 	}
 }
 

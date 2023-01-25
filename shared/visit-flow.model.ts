@@ -31,8 +31,8 @@ export interface IVisitFlowGroup {
 
 export interface IVisitFlowStep {
     Title: string;
-    ResourceType: VisitFlowResourceType;
-    ResourceTypeID: string;
+    Resource: VisitFlowResource;
+    ResourceCreationData: string;
     BaseActivities: string[];
     Mandatory: boolean;
     Disabled?: boolean;
@@ -46,7 +46,7 @@ export interface IVisitFlowSelectedStep {
     StepIndex: number;
 }
 
-export type VisitFlowResourceType =
+export type VisitFlowResource =
     'activities'
     | 'transactions'
     | 'surveys'

@@ -49,7 +49,7 @@ class VisitFlowService {
             debugger;
             if (res?.length === 2 && res[0].length) {
                 this._activeVisits = res[0];
-                console.log('start end activitiies found', res[1].objects?.length);
+                //console.log('start end activitiies found', res[1].objects?.length);
                 if (res[1].success && res[1].objects?.length) {
                     inProgressVisit = await this.getInProgressVisit(res[1].objects[0]);
                 }
@@ -115,6 +115,7 @@ class VisitFlowService {
     }
 
     private async updateVisitSteps(visits: any[], inProgress: IInProgressVisit | null) {
+        const isStartActivityStatusCompleted = false;
         for (let visit of visits) {
             const steps = visit.steps;
             let starterFound = false;
@@ -122,30 +123,30 @@ class VisitFlowService {
             for (let i = 0; i < steps.length; i++) {
                 //let step: any = _.clone(steps[i]);
                 if (inProgress) {
-                    //debugger;
-                    const resource = await this.getResourceItem(
-                        steps[i].ResourceType,
-                        steps[i].ResourceTypeID,
+                    //TODO if startActivity incomplete disable all but set the item in BaseActivities
+                    const item = await this.getResourceItem(
+                        steps[i].Resource,
+                        steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     );
-                    steps[i].BaseActivities = resource ? [resource.UUID] : [];
+                    steps[i].BaseActivities = item ? [item.UUID] : [];
                     steps[i].Completed = this.isStepCompleted(
-                        resource,
+                        item,
                         steps[i].Completed);
                     //in case of an imcomplete mandatory activity - lock End activity
                     if (
                         steps[i].Mandatory &&
                         !steps[i].Completed &&
-                        (steps[i].ResourceType !== 'activities' ||
-                        steps[i].ResourceTypeID !== VISIT_FLOW_MAIN_ACTIVITY)
+                        (steps[i].Resource !== 'activities' ||
+                        steps[i].ResourceCreationData !== VISIT_FLOW_MAIN_ACTIVITY)
                     ) {
                         mandatoryIncompleteFound = true;
                     }
                 } else {
                     steps[i].BaseActivities = [];
                     steps[i].Completed = false;
-                    //in case visit isn't in progress - disable all steps except for the first start step
-                    if (steps[i].ResourceType === 'activities' && steps[i].ResourceTypeID === VISIT_FLOW_MAIN_ACTIVITY && !starterFound) {
+                    //in case visit isn't in progress - disable all steps except for the start step
+                    if (steps[i].Resource === 'activities' && steps[i].ResourceCreationData === VISIT_FLOW_MAIN_ACTIVITY && !starterFound) {
                         steps[i].Disabled = false;
                         starterFound = true;
                     } else {
@@ -169,8 +170,8 @@ class VisitFlowService {
     private lockEndActivity(steps: any[]) {
         for (let i = steps.length - 1; i >= 0; i--) {
             if (
-                steps[i].ResourceType === 'activities' &&
-                steps[i].ResourceTypeID === VISIT_FLOW_MAIN_ACTIVITY
+                steps[i].Resource === 'activities' &&
+                steps[i].ResourceCreationData === VISIT_FLOW_MAIN_ACTIVITY
             ) {
                 steps[i].Disabled = true;
                 break;
@@ -186,7 +187,7 @@ class VisitFlowService {
             let res: any = await pepperi.resources.resource(VISIT_FLOW_GROUPS_TABLE_NAME).search({
                 Fields: ['Key', 'Title', 'SortIndex']
             });
-            debugger;
+            //debugger;
 
             if (res?.Objects?.length) {
                 udcGroups = res.Objects;                     
@@ -203,7 +204,7 @@ class VisitFlowService {
                         }
                     })
                     .value();
-                debugger;
+                //debugger;
                 //in case VISIT_FLOW_GROUPS_TABLE_NAME is defined - use it to sort the groups
                 if (udcGroups?.length) {
                     const sortedGroups = groups.sort((a, b) => {
@@ -217,7 +218,7 @@ class VisitFlowService {
                     });
                     groups = sortedGroups;
                 }
-                debugger;
+                //debugger;
                 visits.push({
                     Key: visit.Key,
                     Title: visit.Description,
@@ -273,13 +274,13 @@ class VisitFlowService {
 
     }
 
-    private async getResourceItem(resourceType: string, resourceTypeID: string, creationDateTime: string) {
+    private async getResourceItem(resource: string, resourceCreationData: string, creationDateTime: string) {
         try {
             let startDateTime = creationDateTime ? creationDateTime : this.getToday();
             let item: any | null = null;
             let res: any;
 
-            switch (resourceType) {
+            switch (resource) {
                 case 'activities':
                     res = await pepperi.api.activities.search({
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
@@ -289,12 +290,8 @@ class VisitFlowService {
                             RightNode: {
                                 Operation: 'AND',
                                 LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
+                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
                             }
-                            /*
-                            Operation: 'AND',
-                            LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] },
-                            RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }*/
                         },
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
                         pageSize: 1
@@ -319,14 +316,8 @@ class VisitFlowService {
                             RightNode: {
                                 Operation: 'AND',
                                 LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
-                            }                            /*Operation: 'AND',
-                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'After', Values: [creationDateTime] },
-                            RightNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] },
-                                RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceTypeID] }
-                            } */
+                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
+                            }                           
                         },
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
                         pageSize: 1
@@ -342,10 +333,9 @@ class VisitFlowService {
                     }
                     break;
                 default:
-                    res = await pepperi.resources.resource(resourceType).search({
+                    res = await pepperi.resources.resource(resource).search({
                         Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                        //Where: `"Template='${resourceTypeID}' And Account='${this._accountStr}' And CreationDateTime >= '${startDateTime}'"`                        
-                        Where: `Template='${resourceTypeID}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
+                        Where: `Template='${resourceCreationData}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
 
                     });
                     debugger;
@@ -396,7 +386,7 @@ class VisitFlowService {
     }
 
     async getStepUrl(client: IClient, step: any, visitUUID: string) {
-        if (step?.ResourceType === 'activities' && step?.ResourceTypeID === VISIT_FLOW_MAIN_ACTIVITY) {
+        if (step?.Resource === 'activities' && step?.ResourceCreationData === VISIT_FLOW_MAIN_ACTIVITY) {
             return this.getStartVisitUrl(step, visitUUID);
         } else {
             return this.getActivityUrl(client, step);
@@ -457,17 +447,17 @@ class VisitFlowService {
     }
 
     private async getActivityUrl(client: IClient, step: any) {
-        let url = this.getBaseUrl(step.ResourceType);
+        let url = this.getBaseUrl(step.Resource);
         let resource: any;
         let catalogName = '';
 
         try {
-            // = await this.getResourceItem(resourceType, resourceTypeID, creationDateTime);            
+            // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
             debugger;
             if (step?.BaseActivities?.length) {
                 return url + step.BaseActivities;
             } else {
-                if (step.ResourceType === 'transactions') {
+                if (step.Resource === 'transactions') {
                     catalogName = await this.chooseCatalog(client);
                     //await client?.alert('outer choose catalog', catalogName);
                     /*if (!catalogName) {                                             
@@ -475,12 +465,12 @@ class VisitFlowService {
                     } */
                 }
                 debugger;
-                const newResource = await this.createResource(step.ResourceType, step.ResourceTypeID, catalogName);
+                const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
                 debugger;
                 if (newResource?.id) {
                     return url + newResource.id;
                 } else {
-                    throw new Error(`Resource ${step.ResourceTypeID} was not created`);
+                    throw new Error(`Resource ${step.ResourceCreationData} was not created`);
                 }
 
             }
@@ -505,12 +495,12 @@ class VisitFlowService {
 
     }
 
-    private getBaseUrl(resourceType: string) {
-        switch (resourceType) {
+    private getBaseUrl(resource: string) {
+        switch (resource) {
             case 'activities':
-                return `/${resourceType}/details/`;
+                return `/${resource}/details/`;
             case 'transactions':
-                return `/${resourceType}/scope_items/`;
+                return `/${resource}/scope_items/`;
             default:
                 return 'surveys?survey_key=';
         }
@@ -563,15 +553,15 @@ class VisitFlowService {
 
     }
 
-    private async createResource(resourceType: string, resourceTypeID: string, catalogName: string = '') {
-        let resource: any = null;
+    private async createResource(resource: string, resourceCreationData: string, catalogName: string = '') {
+        let item: any = null;
 
         try {
-            switch (resourceType) {
+            switch (resource) {
                 case 'activities': {
-                    resource = await pepperi.app.activities.add({
+                    item = await pepperi.app.activities.add({
                         type: {
-                            Name: resourceTypeID
+                            Name: resourceCreationData
                         },
                         references: {
                             account: {
@@ -582,9 +572,9 @@ class VisitFlowService {
                     break;
                 }
                 case 'transactions': {
-                    resource = await pepperi.app.transactions.add({
+                    item = await pepperi.app.transactions.add({
                         type: {
-                            Name: resourceTypeID
+                            Name: resourceCreationData
                         },
                         references: {
                             account: {
@@ -598,15 +588,15 @@ class VisitFlowService {
                     break;
                 }
                 default:
-                    const newSurvey = await pepperi.resources.resource(resourceType).post({
+                    const newSurvey = await pepperi.resources.resource(resource).post({
                         Creator: '00000000-0000-0000-0000-000000000000', //TEMP
-                        Template: resourceTypeID,//templateKey
+                        Template: resourceCreationData,//templateKey
                         Account: this._accountUUID,
                         StatusName: 'InCreation' //TEMP
                     });
                     debugger;
                     if (newSurvey?.Key) {
-                        resource = {
+                        item = {
                             id: newSurvey.Key
                         }
                     }
@@ -619,7 +609,7 @@ class VisitFlowService {
 
 
         debugger;
-        return resource;
+        return item;
     }
 
 }

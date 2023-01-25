@@ -30,15 +30,19 @@ export class FlowService {
     }
 
     async createSchemas() {
-        const flowsScheme = this.getFlowsSchema();
-        const groupsScheme = this.getGroupsSchema();
-        const stepsScheme = this.getStepsSchema();
-
-        return Promise.all([
-            this._papiClient.addons.data.schemes.post(flowsScheme),
-            this._papiClient.addons.data.schemes.post(groupsScheme),
-            this._papiClient.addons.data.schemes.post(stepsScheme)
-        ]);
+        try {
+            const flowsScheme = this.getFlowsSchema();
+            const groupsScheme = this.getGroupsSchema();
+            const stepsScheme = this.getStepsSchema();
+    
+            return Promise.all([
+                this._papiClient.addons.data.schemes.post(flowsScheme),
+                this._papiClient.addons.data.schemes.post(groupsScheme),
+                this._papiClient.addons.data.schemes.post(stepsScheme)
+            ]);
+        } catch (err: any) {
+            throw new Error(err.message);
+        } 
     }
 
     private getFlowsSchema(): AddonDataScheme {
@@ -46,6 +50,9 @@ export class FlowService {
             Name: VISIT_FLOWS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
+            SyncData: {
+                Sync: true
+            },
             Fields: {
                 Name:
                 {
@@ -68,6 +75,9 @@ export class FlowService {
             Name: VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
+            SyncData: {
+                Sync: true
+            },
             Fields: {
                 Title:
                 {
@@ -86,6 +96,9 @@ export class FlowService {
             Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
+            SyncData: {
+                Sync: true
+            },
             Fields: {
                 Title:
                 {
@@ -97,11 +110,11 @@ export class FlowService {
                     Resource: VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
                     AddonUUID: this._client.AddonUUID
                 },
-                ResourceType:
+                Resource:
                 {
                     Type: 'String'
                 },
-                ResourceTypeID:
+                ResourceCreationData:
                 {
                     Type: 'String'
                 },
@@ -118,15 +131,19 @@ export class FlowService {
     }
 
     async upsertUDCs() {
-        const stepsScheme = this.getStepsUdcSchema();
-        await this._papiClient.userDefinedCollections.schemes.upsert(stepsScheme)  
-        const flowsScheme = this.getFlowsUdcSchema();
-        const groupsScheme = this.getGroupsUdcSchema();
-        
-        return Promise.all([
-            this._papiClient.userDefinedCollections.schemes.upsert(flowsScheme),
-            this._papiClient.userDefinedCollections.schemes.upsert(groupsScheme)
-        ]);     
+        try {
+            const stepsScheme = this.getStepsUdcSchema();
+            await this._papiClient.userDefinedCollections.schemes.upsert(stepsScheme)  
+            const flowsScheme = this.getFlowsUdcSchema();
+            const groupsScheme = this.getGroupsUdcSchema();
+            
+            return Promise.all([
+                this._papiClient.userDefinedCollections.schemes.upsert(flowsScheme),
+                this._papiClient.userDefinedCollections.schemes.upsert(groupsScheme)
+            ]);     
+        } catch (err: any) {
+            throw new Error(err.message);
+        } 
     }
 
     /**
@@ -267,29 +284,36 @@ export class FlowService {
     }
 
     async createATD() {
-        const fetchUrl = `/types?where=Name='${VISIT_FLOW_MAIN_ACTIVITY}'&include_deleted=1`;
-        const startEndActivities = await this._papiClient.get(fetchUrl);              
-        if (startEndActivities?.length) {
-            if (startEndActivities[0].Hidden === true) {
-                const currentItem = {
-                    InternalID: startEndActivities[0].InternalID,
-                    Hidden: false
-                }
-                await this._papiClient.post('/meta_data/activities/types', currentItem);
-                return null;
-            } else {
-                return null;
-            }            
-        } else {                        
-            const url = `/meta_data/activities/types`;
-            return await this._papiClient.post(url, ActivityType);
-        }
-        
+        try {
+            const fetchUrl = `/types?where=Name='${VISIT_FLOW_MAIN_ACTIVITY}'&include_deleted=1`;
+            const startEndActivities = await this._papiClient.get(fetchUrl);              
+            if (startEndActivities?.length) {
+                if (startEndActivities[0].Hidden === true) {
+                    const currentItem = {
+                        InternalID: startEndActivities[0].InternalID,
+                        Hidden: false
+                    }
+                    await this._papiClient.post('/meta_data/activities/types', currentItem);
+                    return null;
+                } else {
+                    return null;
+                }            
+            } else {                        
+                const url = `/meta_data/activities/types`;
+                return await this._papiClient.post(url, ActivityType);
+            }
+        } catch (err: any) {
+            throw new Error(err.message);
+        } 
     }
 
     async createTSAFields(atdId: string) {
-        const bulkUrl = `/meta_data/bulk/activities/types/${atdId}/fields`;
-        return await this._papiClient.post(bulkUrl, VisitFlowTSAFields);
+        try {
+            const bulkUrl = `/meta_data/bulk/activities/types/${atdId}/fields`;
+            return await this._papiClient.post(bulkUrl, VisitFlowTSAFields);
+        } catch (err: any) {
+            throw new Error(err.message);
+        } 
     }
 
     /***********************************************************************************************/
@@ -303,7 +327,7 @@ export class FlowService {
                 EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD,
                 EventData: {
                     Visits: {
-                        Type: 'Array'
+                        Type: 'Object'
                     }
                 }
             }, {

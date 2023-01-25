@@ -6,7 +6,7 @@ export interface IApiService<T extends AddonData>
 
 	getResourceByKey(key: string): Promise<T>;
 
-    searchResources(body: any): Promise<Array<T>>;
+    searchResources(body: any): Promise<{Objects: T[], Count?: number}>
 }
 
 export default IApiService;
