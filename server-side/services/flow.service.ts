@@ -326,7 +326,7 @@ export class FlowService {
                 Title: 'On visit flow data load',
                 EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD,
                 EventData: {
-                    Visits: {
+                    Data: {
                         Type: 'Object'
                     }
                 }

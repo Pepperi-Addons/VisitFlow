@@ -103,9 +103,9 @@ class VisitFlowService {
                 udcVisits = this._activeVisits;
             }
             debugger;
-            await this.updateVisitSteps(udcVisits, inProgressVisit);
-            debugger;
-            visitFlows = await this.convertToVisitFlows(udcVisits);
+            visitFlows = await this.convertToVisitGroups(udcVisits, inProgressVisit);
+            //debugger;
+            //visitFlows = await this.convertToVisitFlows(udcVisits);
             debugger;
 
             return visitFlows;
@@ -114,10 +114,32 @@ class VisitFlowService {
         }
     }
 
-    private async updateVisitSteps(visits: any[], inProgress: IInProgressVisit | null) {
-        const isStartActivityStatusCompleted = false;
+    private async convertToVisitGroups(visits: any[], inProgress: IInProgressVisit | null) {
+        let udcGroups: any[] = [];
+        let groupedVisits: any[] = [];
+        let res: any = await pepperi.resources.resource(VISIT_FLOW_GROUPS_TABLE_NAME).search({
+            Fields: ['Key', 'Title', 'SortIndex']
+        });
+
+        if (res?.Objects?.length) {
+            udcGroups = res.Objects;
+        }
+        //     
         for (let visit of visits) {
-            const steps = visit.steps;
+            let steps = visit.steps;
+            //sort steps by group SortIndex   
+            if (udcGroups?.length) {
+                steps.sort((a, b) => {
+                    const groupA = udcGroups.find(group => group.Key === a.Group);
+                    const groupB = udcGroups.find(group => group.Key === b.Group);
+                    if (groupA && groupA.SortIndex >= 0 && groupB && groupB.SortIndex >= 0) {
+                        return groupA.SortIndex - groupB.SortIndex;
+                    } else {
+                        return 0;
+                    }
+                });
+            }
+            //            
             let starterFound = false;
             let mandatoryIncompleteFound = false;
             for (let i = 0; i < steps.length; i++) {
@@ -138,7 +160,7 @@ class VisitFlowService {
                         steps[i].Mandatory &&
                         !steps[i].Completed &&
                         (steps[i].Resource !== 'activities' ||
-                        steps[i].ResourceCreationData !== VISIT_FLOW_MAIN_ACTIVITY)
+                            steps[i].ResourceCreationData !== VISIT_FLOW_MAIN_ACTIVITY)
                     ) {
                         mandatoryIncompleteFound = true;
                     }
@@ -159,8 +181,26 @@ class VisitFlowService {
             if (mandatoryIncompleteFound) {
                 this.lockEndActivity(steps);
             }
-            //debugger;
+
+            let groups = _(steps)
+                .groupBy(step => step.Group)
+                .map(group => {
+                    return {
+                        Key: group[0].Group,
+                        Title: this.getGroupTitle(udcGroups, group[0].Group),
+                        Steps: group
+                    }
+                })
+                .value();
+
+            groupedVisits.push({
+                Key: visit.Key,
+                Title: visit.Description,
+                Groups: groups
+            });
         }
+
+        return groupedVisits;
     }
 
     /**
@@ -179,6 +219,7 @@ class VisitFlowService {
         }
     }
 
+    /*
     private async convertToVisitFlows(udcVisits: any[]) {
         let visits: IVisitFlow[] = [];
         let udcGroups: any[] = [];
@@ -190,7 +231,7 @@ class VisitFlowService {
             //debugger;
 
             if (res?.Objects?.length) {
-                udcGroups = res.Objects;                     
+                udcGroups = res.Objects;
             }
 
             for (let visit of udcVisits) {
@@ -231,7 +272,7 @@ class VisitFlowService {
             debugger;
             throw new Error(err.message);
         }
-    }
+    } */
 
     private getGroupTitle(groups, key) {
         const item = groups.find(group => group.Key === key);
@@ -317,7 +358,7 @@ class VisitFlowService {
                                 Operation: 'AND',
                                 LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
                                 , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-                            }                           
+                            }
                         },
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
                         pageSize: 1
@@ -401,7 +442,7 @@ class VisitFlowService {
     private async getStartVisitUrl(step: any, visitUUID: string) {
         try {
             let url = '/activities/details/';
-            let activity: any = null;            
+            let activity: any = null;
 
             debugger;
             if (step?.BaseActivities?.length) {

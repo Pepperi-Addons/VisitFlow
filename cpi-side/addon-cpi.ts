@@ -9,7 +9,7 @@ import {
     USER_ACTION_ON_VISIT_FLOW_STEP_CLICK,
     VISIT_FLOW_MAIN_ACTIVITY,
     VISIT_FLOWS_BASE_TABLE_NAME,
-    VISIT_FLOW_STEPS_TABLE_NAME,    
+    VISIT_FLOW_STEPS_TABLE_NAME,
     VISIT_FLOW_GROUPS_BASE_TABLE_NAME
 } from 'shared';
 import { UtilsService } from './utils.service';
@@ -30,11 +30,16 @@ export async function load(configuration: any) {
 
                 visits = await service.getVisits(data.ResourceName);
                 debugger;
+                if (visits.length === 0) {
+                    await data.client?.alert('Error', 'Visits were not defined');
+                    return {};
+                }
                 const eventRes: any = await pepperi.events.emit(USER_ACTION_ON_VISIT_FLOW_LOAD, {
-                    Visits: { 
-                        Visits: visits
+                    Data: {           
+                        AccountUUID: data.AccountUUID,             
+                        Visits: visits                        
                     },
-                    ObjectType: data.ResourceName
+                    ObjectType: data.ResourceName                    
                 }, data);
 
                 if (eventRes?.data?.Visits) {
@@ -49,7 +54,7 @@ export async function load(configuration: any) {
                 } else {
                     await data.client?.alert('Error', 'Visits were not defined');
                     return {};
-                }                               
+                }
             }
 
         } catch (err: any) {
@@ -78,7 +83,7 @@ export async function load(configuration: any) {
 
             const service = new VisitFlowService(inputData.AccountUUID);
             let url: string | undefined = undefined;
-           
+
             debugger;
             if (
                 inputData?.SelectedStep?.GroupIndex >= 0 &&
@@ -90,7 +95,7 @@ export async function load(configuration: any) {
                 debugger;
                 url = await service.getStepUrl(data.client as any, step, inputData.Visit?.Key);
             }
-            
+
             debugger;
 
             //await data.client?.alert('OnClientVisitFlowStepClick finish, url -', url);
@@ -124,14 +129,14 @@ router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}`, async (req, res) => {
 });
 
 router.get(`/${VISIT_FLOWS_BASE_TABLE_NAME}/key/:key`, async (req, res) => {
-    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);      
+    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);
     const visits = await service.getResourceByKey(req.params.key);
 
     res.json(visits);
 });
 
 router.post(`/${VISIT_FLOWS_BASE_TABLE_NAME}/search`, async (req, res) => {
-    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);       
+    const service = new PapiService(VISIT_FLOWS_BASE_TABLE_NAME);
     const visits = await service.searchResources(req.body);
 
     res.json(visits);
@@ -147,14 +152,14 @@ router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}`, async (req, res) => {
 });
 
 router.get(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}/key/:key`, async (req, res) => {
-    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
+    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
     const visits = await service.getResourceByKey(req.params.key);
 
     res.json(visits);
 });
 
 router.post(`/${VISIT_FLOW_GROUPS_BASE_TABLE_NAME}/search`, async (req, res) => {
-    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
+    const service = new PapiService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
     const visits = await service.searchResources(req.body);
 
     res.json(visits);
