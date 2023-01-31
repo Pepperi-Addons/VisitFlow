@@ -2,9 +2,9 @@
 import { Client, Request } from '@pepperi-addons/debug-server';
 import { ApiFieldObject, PapiClient, AddonDataScheme, SchemeFieldTypes } from "@pepperi-addons/papi-sdk";
 import { ActivityType, VisitFlowTSAFields } from '../metadata';
-import { 
+import {
     VISIT_FLOW_MAIN_ACTIVITY,
-    VISIT_FLOW_STEPS_TABLE_NAME, 
+    VISIT_FLOW_STEPS_TABLE_NAME,
     VISIT_FLOW_STEPS_BASE_TABLE_NAME,
     VISIT_FLOW_GROUPS_TABLE_NAME,
     VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
@@ -16,7 +16,7 @@ import {
 
 export class FlowService {
     private _papiClient: PapiClient;
-    private _client: Client;    
+    private _client: Client;
 
     constructor(client: Client) {
         this._client = client;
@@ -34,7 +34,7 @@ export class FlowService {
             const flowsScheme = this.getFlowsSchema();
             const groupsScheme = this.getGroupsSchema();
             const stepsScheme = this.getStepsSchema();
-    
+
             return Promise.all([
                 this._papiClient.addons.data.schemes.post(flowsScheme),
                 this._papiClient.addons.data.schemes.post(groupsScheme),
@@ -42,7 +42,7 @@ export class FlowService {
             ]);
         } catch (err: any) {
             throw new Error(err.message);
-        } 
+        }
     }
 
     private getFlowsSchema(): AddonDataScheme {
@@ -133,17 +133,17 @@ export class FlowService {
     async upsertUDCs() {
         try {
             const stepsScheme = this.getStepsUdcSchema();
-            await this._papiClient.userDefinedCollections.schemes.upsert(stepsScheme)  
+            await this._papiClient.userDefinedCollections.schemes.upsert(stepsScheme)
             const flowsScheme = this.getFlowsUdcSchema();
             const groupsScheme = this.getGroupsUdcSchema();
-            
+
             return Promise.all([
                 this._papiClient.userDefinedCollections.schemes.upsert(flowsScheme),
                 this._papiClient.userDefinedCollections.schemes.upsert(groupsScheme)
-            ]);     
+            ]);
         } catch (err: any) {
             throw new Error(err.message);
-        } 
+        }
     }
 
     /**
@@ -151,7 +151,7 @@ export class FlowService {
      * field of type 'ContainedResource'
      * @returns udc scheme
      */
-    private getFlowsUdcSchema(): any {        
+    private getFlowsUdcSchema(): any {
         const udcObject = {
             DocumentKey: {
                 Delimiter: '@',
@@ -205,10 +205,10 @@ export class FlowService {
         };
     }
 
-     /**
-     * upserts a UDC scheme that inherits from visit flow groups scheme     
-     * @returns udc scheme
-     */
+    /**
+    * upserts a UDC scheme that inherits from visit flow groups scheme     
+    * @returns udc scheme
+    */
     private getGroupsUdcSchema(): any {
         const udcObject = {
             DocumentKey: {
@@ -217,15 +217,15 @@ export class FlowService {
                 Fields: []
             },
             Fields: {},
-            ListView: { 
-                Type: 'Grid', 
-                Fields: [], 
-                Columns: [], 
-                Context: { 
-                    Name: '', 
-                    Profile: {}, 
-                    ScreenSize: 'Tablet' 
-                } 
+            ListView: {
+                Type: 'Grid',
+                Fields: [],
+                Columns: [],
+                Context: {
+                    Name: '',
+                    Profile: {},
+                    ScreenSize: 'Tablet'
+                }
             },
             GenericResource: true
         };
@@ -256,15 +256,15 @@ export class FlowService {
                 Fields: []
             },
             Fields: {},
-            ListView: { 
-                Type: 'Grid', 
-                Fields: [], 
-                Columns: [], 
-                Context: { 
-                    Name: '', 
-                    Profile: {}, 
-                    ScreenSize: 'Tablet' 
-                } 
+            ListView: {
+                Type: 'Grid',
+                Fields: [],
+                Columns: [],
+                Context: {
+                    Name: '',
+                    Profile: {},
+                    ScreenSize: 'Tablet'
+                }
             },
             GenericResource: true
         };
@@ -286,7 +286,7 @@ export class FlowService {
     async createATD() {
         try {
             const fetchUrl = `/types?where=Name='${VISIT_FLOW_MAIN_ACTIVITY}'&include_deleted=1`;
-            const startEndActivities = await this._papiClient.get(fetchUrl);              
+            const startEndActivities = await this._papiClient.get(fetchUrl);
             if (startEndActivities?.length) {
                 if (startEndActivities[0].Hidden === true) {
                     const currentItem = {
@@ -297,14 +297,14 @@ export class FlowService {
                     return null;
                 } else {
                     return null;
-                }            
-            } else {                        
+                }
+            } else {
                 const url = `/meta_data/activities/types`;
                 return await this._papiClient.post(url, ActivityType);
             }
         } catch (err: any) {
             throw new Error(err.message);
-        } 
+        }
     }
 
     async createTSAFields(atdId: string) {
@@ -313,32 +313,34 @@ export class FlowService {
             return await this._papiClient.post(bulkUrl, VisitFlowTSAFields);
         } catch (err: any) {
             throw new Error(err.message);
-        } 
+        }
     }
 
     /***********************************************************************************************/
     //                              User Events functions
     /************************************************************************************************/
-    
+
     getVisitFLowUserEvents(query: any) {
         const events = {
-            "Events": [{
-                Title: 'On visit flow data load',
-                EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD,
-                EventData: {
-                    Data: {
-                        Type: 'Object'
+            "Events": [
+                {
+                    Title: 'On visit flow data load',
+                    EventKey: USER_ACTION_ON_VISIT_FLOW_LOAD,
+                    EventData: {
+                        Data: {
+                            Type: 'Object'
+                        }
+                    }
+                }, {
+                    Title: 'On visit step click',
+                    EventKey: USER_ACTION_ON_VISIT_FLOW_STEP_CLICK,
+                    EventData: {
+                        Data: {
+                            Type: 'Object'
+                        }
                     }
                 }
-            }, {
-                Title: 'On visit step click',
-                EventKey: USER_ACTION_ON_VISIT_FLOW_STEP_CLICK,
-                EventData: {
-                    Data: {
-                        Type: 'Object'
-                    }
-                }
-            }]
+            ]
         }
 
         return events;

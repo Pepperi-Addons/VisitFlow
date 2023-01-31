@@ -103,12 +103,12 @@ class VisitFlowService {
                 udcVisits = this._activeVisits;
             }
             debugger;
-            visitFlows = await this.convertToVisitGroups(udcVisits, inProgressVisit);
+            return this.convertToVisitGroups(udcVisits, inProgressVisit);
             //debugger;
             //visitFlows = await this.convertToVisitFlows(udcVisits);
-            debugger;
+           // debugger;
 
-            return visitFlows;
+           // return visitFlows;
         } catch (err: any) {
             throw new Error(err.message);
         }

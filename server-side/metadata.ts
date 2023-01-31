@@ -8,7 +8,7 @@ export const ActivityType = {
 }
 
 export const VisitFlowTSAFields: ApiFieldObject[] = [
-    {
+    /*{
         FieldID: "TSAStartVisitDateTime",
         Label: "StartVisitDateTime",
         Description: "Start Visit Date Time",
@@ -31,7 +31,7 @@ export const VisitFlowTSAFields: ApiFieldObject[] = [
         },
         Type: "String",
         Format: "DateTime"
-    },
+    },*/
     {
         FieldID: "TSAFlowID",
         Label: "FlowId",
