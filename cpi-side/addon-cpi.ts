@@ -10,7 +10,8 @@ import {
     VISIT_FLOW_MAIN_ACTIVITY,
     VISIT_FLOWS_BASE_TABLE_NAME,
     VISIT_FLOW_STEPS_TABLE_NAME,
-    VISIT_FLOW_GROUPS_BASE_TABLE_NAME
+    VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
+    VISIT_FLOWS_TABLE_NAME
 } from 'shared';
 import { UtilsService } from './utils.service';
 
@@ -45,8 +46,6 @@ export async function load(configuration: any) {
                 if (eventRes?.data?.Visits) {
                     visits = eventRes.data.Visits;
                 }
-
-                debugger;
                 if (visits?.length) {
                     return {
                         Visits: visits
@@ -71,10 +70,22 @@ export async function load(configuration: any) {
                 Visit: data.Visit,
                 SelectedStep: data.SelectedStep
             }
+            let visit: any = {}
+            const visitkey = inputData.Visit?.Key || '';
+            try {
+                const res = (await pepperi.resources.resource(VISIT_FLOWS_BASE_TABLE_NAME).search({KeyList: [visitkey], Fields: ['ResourceName']})).Objects || [];
+                if(res?.length > 0) {
+                    visit = res[0];
+                }
+
+            }
+            catch (err) {
+                console.log(`could not found visit with key ${visitkey}`);
+            }
             // Emit user event OnVisitFlowStepClick
             const eventRes: any = await pepperi.events.emit(USER_ACTION_ON_VISIT_FLOW_STEP_CLICK, {
                 Data: inputData,
-                ObjectType: VISIT_FLOW_STEPS_TABLE_NAME
+                ObjectType: visit.ResourceName
             }, data);
 
             if (eventRes?.Data) {
@@ -84,7 +95,6 @@ export async function load(configuration: any) {
             const service = new VisitFlowService(inputData.AccountUUID);
             let url: string | undefined = undefined;
 
-            debugger;
             if (
                 inputData?.SelectedStep?.GroupIndex >= 0 &&
                 inputData.SelectedStep.StepIndex >= 0 &&
