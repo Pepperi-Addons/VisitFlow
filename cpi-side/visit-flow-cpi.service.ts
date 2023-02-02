@@ -195,7 +195,7 @@ class VisitFlowService {
 
             groupedVisits.push({
                 Key: visit.Key,
-                Title: visit.Description,
+                Title: visit.Name, //change from description to name for DI-22805
                 Groups: groups
             });
         }
