@@ -18,7 +18,6 @@ import { UtilsService } from './utils.service';
 export async function load(configuration: any) {
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD as any, {}, async (data): Promise<any> => {
         try {
-            debugger;
             if (!data.ResourceName) {
                 await data.client?.alert('Error', 'Resource was not selected');
                 return {};
@@ -30,7 +29,7 @@ export async function load(configuration: any) {
                 let visits: any[] = [];
 
                 visits = await service.getVisits(data.ResourceName);
-                debugger;
+                
                 if (visits.length === 0) {
                     await data.client?.alert('Error', 'Visits were not defined');
                     return {};
@@ -88,8 +87,8 @@ export async function load(configuration: any) {
                 ObjectType: visit.ResourceName
             }, data);
 
-            if (eventRes?.Data) {
-                inputData = eventRes.Data;
+            if (eventRes?.data?.Data) {
+                inputData = eventRes.data.Data;
             }
 
             const service = new VisitFlowService(inputData.AccountUUID);

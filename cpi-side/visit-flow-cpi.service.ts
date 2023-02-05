@@ -146,14 +146,21 @@ class VisitFlowService {
                 //let step: any = _.clone(steps[i]);
                 if (inProgress) {
                     //TODO if startActivity incomplete disable all but set the item in BaseActivities
-                    const item = await this.getResourceItem(
+                    // const item = await this.getResourceItem(
+                    //     steps[i].Resource,
+                    //     steps[i].ResourceCreationData,
+                    //     inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
+                    // );
+                    // steps[i].BaseActivities = item ? [item.UUID] : [];
+                    const items = await this.getResourceItem(
                         steps[i].Resource,
                         steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     );
-                    steps[i].BaseActivities = item ? [item.UUID] : [];
+                    steps[i].BaseActivities = items.map(i => i?.UUID);
+                    
                     steps[i].Completed = this.isStepCompleted(
-                        item,
+                        items[0],
                         steps[i].Completed);
                     //in case of an imcomplete mandatory activity - lock End activity
                     if (
@@ -320,6 +327,7 @@ class VisitFlowService {
             let startDateTime = creationDateTime ? creationDateTime : this.getToday();
             let item: any | null = null;
             let res: any;
+            let items: any[] = [];
 
             switch (resource) {
                 case 'activities':
@@ -346,6 +354,8 @@ class VisitFlowService {
                         } else {
                             item = res.objects[0];
                         }
+
+                        items = res.objects;
                     }
                     break;
                 case 'transactions':
@@ -371,6 +381,8 @@ class VisitFlowService {
                         } else {
                             item = res.objects[0];
                         }
+
+                        items = res.objects;
                     }
                     break;
                 default:
@@ -400,6 +412,8 @@ class VisitFlowService {
                                 UUID: templates[0].Key,
                                 StatusName: templates[0].Status || ''
                             }
+
+                            items = templates;
                         }
                     }
                     break;
@@ -418,7 +432,14 @@ class VisitFlowService {
                 }
             } */
 
-            return item;
+            // return item;
+            if (items.length > 0 && item !== null) {
+                items[0] = item;
+            } else {
+                items.push(null);
+            }
+
+            return items;
         } catch (err: any) {
             debugger;
             throw new Error(err.message);
