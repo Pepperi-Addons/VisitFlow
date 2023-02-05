@@ -102,7 +102,7 @@ export async function load(configuration: any) {
                 const step = inputData.Visit.Groups[inputData.SelectedStep.GroupIndex].Steps[inputData.SelectedStep.StepIndex];
                 url = await service.getStepUrl(data.client as any, step, inputData.Visit?.Key);
             }
-
+            debugger;
             //await data.client?.alert('OnClientVisitFlowStepClick finish, url -', url);
             if (url) {
                 await data.client?.navigateTo({ url: url });
