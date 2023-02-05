@@ -29,7 +29,6 @@ export async function load(configuration: any) {
                 let visits: any[] = [];
 
                 visits = await service.getVisits(data.ResourceName);
-                
                 if (visits.length === 0) {
                     await data.client?.alert('Error', 'Visits were not defined');
                     return {};
@@ -87,8 +86,8 @@ export async function load(configuration: any) {
                 ObjectType: visit.ResourceName
             }, data);
 
-            if (eventRes?.data?.Data) {
-                inputData = eventRes.data.Data;
+            if (eventRes?.Data) {
+                inputData = eventRes.Data;
             }
 
             const service = new VisitFlowService(inputData.AccountUUID);
@@ -101,11 +100,8 @@ export async function load(configuration: any) {
                 inputData.Visit.Groups[inputData.SelectedStep.GroupIndex]?.Steps?.length
             ) {
                 const step = inputData.Visit.Groups[inputData.SelectedStep.GroupIndex].Steps[inputData.SelectedStep.StepIndex];
-                debugger;
                 url = await service.getStepUrl(data.client as any, step, inputData.Visit?.Key);
             }
-
-            debugger;
 
             //await data.client?.alert('OnClientVisitFlowStepClick finish, url -', url);
             if (url) {
