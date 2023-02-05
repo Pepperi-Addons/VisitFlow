@@ -600,7 +600,8 @@ class VisitFlowService {
                             //await client?.alert('finding catalog name', catalogName);     
                         }
                     } else {
-                        throw new Error('Catalog was not selected');
+                        await client?.alert('Choose catalog','Catalog was not selected');
+                        //throw new Error('Catalog was not selected');
                     }
                 }
             }
