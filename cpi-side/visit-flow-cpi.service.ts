@@ -155,7 +155,7 @@ class VisitFlowService {
                         steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     );
-                    steps[i].BaseActivities = items.length === 1 && !items[0] ? [] : items.map(i => i?.UUID);
+                    steps[i].BaseActivities = items.map(i => i?.UUID);
                     
                     steps[i].Completed = this.isStepCompleted(
                         items[0],
@@ -459,7 +459,8 @@ class VisitFlowService {
             let url = '/activities/details/';
             let activity: any = null;
 
-            if (step?.BaseActivities?.length) {
+            // if (step?.BaseActivities?.length) {
+            if (step?.BaseActivities?.length && step.BaseActivities[0] !== null) {
                 url += step.BaseActivities[0];
                 //await data.client?.alert('found activit, url - ', url);
             } else {
@@ -507,7 +508,8 @@ class VisitFlowService {
 
         try {
             // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
-            if (step?.BaseActivities?.length) {
+            // if (step?.BaseActivities?.length) {
+            if (step?.BaseActivities?.length && step.BaseActivities[0] !== null) {
                 return url + step.BaseActivities;
             } else {
                 if (step.Resource === 'transactions') {
@@ -518,14 +520,17 @@ class VisitFlowService {
                     } */
                 }
 
-                const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
-
-                if (newResource?.id) {
-                    return url + newResource.id;
+                if (catalogName !== '') {
+                    const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
+    
+                    if (newResource?.id) {
+                        return url + newResource.id;
+                    } else {
+                        throw new Error(`Resource ${step.ResourceCreationData} was not created`);
+                    }
                 } else {
-                    throw new Error(`Resource ${step.ResourceCreationData} was not created`);
+                    return '';
                 }
-
             }
         } catch (err: any) {
             //await client?.alert('outer choose catalog exc', err?.message);
@@ -579,6 +584,7 @@ class VisitFlowService {
             //await client?.alert('catalog choosed result', '');
             // If catalog template was choosen
             if (!catalogResult.canceled) {
+                debugger;
                 if (catalogResult.result.length > 0) {
                     const resObject = JSON.parse(catalogResult.result);
                     if (resObject?.selectedObjectKeys.length > 0) {
@@ -591,9 +597,9 @@ class VisitFlowService {
                             catalogName = catalog.ExternalID;
                             //await client?.alert('finding catalog name', catalogName);     
                         }
+                    } else {
+                        throw new Error('Catalog was not selected');
                     }
-                } else {
-                    throw new Error('Catalog was not selected');
                 }
             }
 
