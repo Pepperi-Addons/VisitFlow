@@ -86,8 +86,8 @@ export async function load(configuration: any) {
                 ObjectType: visit.ResourceName
             }, data);
 
-            if (eventRes?.Data) {
-                inputData = eventRes.Data;
+            if (eventRes?.data?.Data) {
+                inputData = eventRes.data.Data;
             }
 
             const service = new VisitFlowService(inputData.AccountUUID);
