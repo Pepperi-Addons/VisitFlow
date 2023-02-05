@@ -37,6 +37,7 @@ export interface IVisitFlowStep {
     Mandatory: boolean;
     Disabled?: boolean;
     Completed: boolean;
+    CompletedStatusName: string;
     DepandsOnStep?: number;
     [key: string]: any;
 }

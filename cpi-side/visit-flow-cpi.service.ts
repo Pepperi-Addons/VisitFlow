@@ -144,6 +144,7 @@ class VisitFlowService {
             let mandatoryIncompleteFound = false;
             for (let i = 0; i < steps.length; i++) {
                 //let step: any = _.clone(steps[i]);
+                steps[i].CompletedStatusName =  steps[i].Completed;
                 if (inProgress) {
                     //TODO if startActivity incomplete disable all but set the item in BaseActivities
                     const item = await this.getResourceItem(
