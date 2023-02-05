@@ -153,7 +153,7 @@ class VisitFlowService {
                     //     inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     // );
                     // steps[i].BaseActivities = item ? [item.UUID] : [];
-                    const items = await this.getResourceItem(
+                    const items = await this.getResourceItems(
                         steps[i].Resource,
                         steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
@@ -323,7 +323,7 @@ class VisitFlowService {
 
     }
 
-    private async getResourceItem(resource: string, resourceCreationData: string, creationDateTime: string) {
+    private async getResourceItems(resource: string, resourceCreationData: string, creationDateTime: string) {
         try {
             let startDateTime = creationDateTime ? creationDateTime : this.getToday();
             let item: any | null = null;
