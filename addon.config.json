@@ -15,7 +15,8 @@
     "ClientStack": "ng14",
     "Dependencies": {
       "webapp": "17.15.106",
-      "cpi_node": "1.1.68",
+      "cpas": "17.0.8",
+      "cpi_node": "1.1.83",
       "core": "0.6.21",
       "core_resources": "0.6.20",
       "cpi_data": "0.6.11",

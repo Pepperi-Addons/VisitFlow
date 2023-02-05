@@ -6,6 +6,7 @@ import {
     VISIT_FLOW_MAIN_ACTIVITY
 } from 'shared';
 import _ from 'lodash';
+import { User } from '@pepperi-addons/cpi-node';
 
 
 interface IInProgressVisit {
@@ -507,6 +508,7 @@ class VisitFlowService {
         let catalogName = '';
 
         try {
+            debugger;
             // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
             // if (step?.BaseActivities?.length) {
             if (step?.BaseActivities?.length && step.BaseActivities[0] !== null) {
@@ -520,7 +522,7 @@ class VisitFlowService {
                     } */
                 }
 
-                if (catalogName !== '') {
+                if (step.Resource === 'transactions' && catalogName !== '' || step.Resource !== 'transactions') {
                     const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
     
                     if (newResource?.id) {
@@ -647,8 +649,11 @@ class VisitFlowService {
                     break;
                 }
                 default:
+                    debugger;
+                    //@ts-ignore
+                    const user: User = await pepperi.environment.user();
                     const newSurvey = await pepperi.resources.resource(resource).post({
-                        Creator: '00000000-0000-0000-0000-000000000000', //TEMP
+                        Creator: user.uuid, //'00000000-0000-0000-0000-000000000000', //TEMP
                         Template: resourceCreationData,//templateKey
                         Account: this._accountUUID,
                         StatusName: 'InCreation' //TEMP
