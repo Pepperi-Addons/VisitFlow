@@ -42,6 +42,7 @@ export class EditorFormComponent implements OnInit {
     }
 
     goBack() {
+        debugger;
         this.router.navigate(['..'], {
             relativeTo: this.activatedRoute,
             queryParamsHandling: 'preserve'

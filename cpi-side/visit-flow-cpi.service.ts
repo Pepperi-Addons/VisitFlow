@@ -46,7 +46,6 @@ class VisitFlowService {
                 pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
-            debugger;
             if (res?.length === 2 && res[0].length) {
                 this._activeVisits = res[0];
                 //console.log('start end activitiies found', res[1].objects?.length);
@@ -96,13 +95,11 @@ class VisitFlowService {
         let udcVisits;
 
         try {
-            debugger;
             if (inProgressVisit) {
                 udcVisits = [this._activeVisits[inProgressVisit.ActiveVisitIndex]];
             } else {
                 udcVisits = this._activeVisits;
             }
-            debugger;
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
             //debugger;
             //visitFlows = await this.convertToVisitFlows(udcVisits);
@@ -277,7 +274,6 @@ class VisitFlowService {
 
             return visits;
         } catch (err: any) {
-            debugger;
             throw new Error(err.message);
         }
     } */
@@ -392,13 +388,10 @@ class VisitFlowService {
                         Where: `Template='${resourceCreationData}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
 
                     });
-                    debugger;
                     if (res?.Objects?.length) {
-                        debugger;
-
                         //let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime);
                         let templates: any[] = res.Objects;
-                        debugger;
+
                         if (templates.length) {
                             templates.sort((a, b) => {
                                 if (a.CreationDateTime > b.CreationDateTime) {
@@ -466,12 +459,10 @@ class VisitFlowService {
             let url = '/activities/details/';
             let activity: any = null;
 
-            debugger;
             if (step?.BaseActivities?.length) {
                 url += step.BaseActivities[0];
                 //await data.client?.alert('found activit, url - ', url);
             } else {
-                debugger;
                 //await data.client?.alert('creating new activity', this._accountUUID);
                 const res: any = await pepperi.app.activities.add({
                     type: {
@@ -486,7 +477,7 @@ class VisitFlowService {
                         TSAFlowID: visitUUID
                     }
                 });
-                debugger;
+
                 if (res && res.success === true && res.id) {
                     //await data.client?.alert('after creating activity success', '');
                     url += res.id;
@@ -516,7 +507,6 @@ class VisitFlowService {
 
         try {
             // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
-            debugger;
             if (step?.BaseActivities?.length) {
                 return url + step.BaseActivities;
             } else {
@@ -527,9 +517,9 @@ class VisitFlowService {
                         throw new Error('Catalog was not selected');
                     } */
                 }
-                debugger;
+
                 const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
-                debugger;
+
                 if (newResource?.id) {
                     return url + newResource.id;
                 } else {
@@ -657,7 +647,6 @@ class VisitFlowService {
                         Account: this._accountUUID,
                         StatusName: 'InCreation' //TEMP
                     });
-                    debugger;
                     if (newSurvey?.Key) {
                         item = {
                             id: newSurvey.Key
@@ -670,8 +659,6 @@ class VisitFlowService {
             throw new Error(err.message);
         }
 
-
-        debugger;
         return item;
     }
 
