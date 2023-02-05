@@ -158,7 +158,7 @@ class VisitFlowService {
                         steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     );
-                    steps[i].BaseActivities = items.map(i => i?.UUID);
+                    steps[i].BaseActivities = items.length === 1 && !items[0] ? [] : items.map(i => i?.UUID);
                     
                     steps[i].Completed = this.isStepCompleted(
                         items[0],
