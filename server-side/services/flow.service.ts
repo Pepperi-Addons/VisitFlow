@@ -91,8 +91,47 @@ export class FlowService {
         }
     }
 
+    // private getStepsSchema(): AddonDataScheme {
+    //     return {
+    //         Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME,
+    //         Type: 'abstract',
+    //         AddonUUID: this._client.AddonUUID,
+    //         SyncData: {
+    //             Sync: true
+    //         },
+    //         Fields: {
+    //             Title:
+    //             {
+    //                 Type: 'String'
+    //             },
+    //             Group:
+    //             {
+    //                 Type: 'Resource',
+    //                 Resource: VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
+    //                 AddonUUID: this._client.AddonUUID,
+    //             },
+    //             Resource:
+    //             {
+    //                 Type: 'String'
+    //             },
+    //             ResourceCreationData:
+    //             {
+    //                 Type: 'String'
+    //             },
+    //             Mandatory:
+    //             {
+    //                 Type: 'Bool'
+    //             },
+    //             Completed:
+    //             {
+    //                 Type: 'String'
+    //             }
+    //         }
+    //     }
+    // }
+
     private getStepsSchema(): AddonDataScheme {
-        return {
+        const scheme: AddonDataScheme = {
             Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
@@ -120,7 +159,7 @@ export class FlowService {
                 },
                 Mandatory:
                 {
-                    Type: 'Bool'
+                    Type: 'Bool' 
                 },
                 Completed:
                 {
@@ -128,6 +167,9 @@ export class FlowService {
                 }
             }
         }
+            scheme.Fields!['Completed']['OptionalValues'] = ['In Creation','Submitted','In Progress','On Hold','Cancelled','Need Revision','Closed','Failed','Need Approval','ERP','Invoice','Need Online Approval','In Planning','Published','In Payment','Need Payment'];
+            scheme.Fields!['Resource']['OptionalValues'] = ['transactions','activities','MySurveys'];
+        return scheme;
     }
 
     async upsertUDCs() {
