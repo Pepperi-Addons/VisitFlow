@@ -336,15 +336,13 @@ export class FlowService {
                         Hidden: false
                     }
                     await this._papiClient.post('/meta_data/activities/types', currentItem);
-                    return null;
-                } else {
                     //return null;
-                    const currentItem = {
-                        TypeID:  startEndActivities[0].InternalID,
-                        InternalID: startEndActivities[0].InternalID,
-                        Hidden: false
-                    }
-                    return currentItem;
+                } 
+
+                return {
+                    TypeID:  startEndActivities[0].InternalID,
+                    InternalID: startEndActivities[0].InternalID,
+                    Hidden: false
                 }
             } else {
                 const url = `/meta_data/activities/types`;

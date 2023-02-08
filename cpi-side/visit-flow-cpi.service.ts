@@ -102,9 +102,7 @@ class VisitFlowService {
                 udcVisits = this._activeVisits;
             }
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
-            //debugger;
             //visitFlows = await this.convertToVisitFlows(udcVisits);
-           // debugger;
 
            // return visitFlows;
         } catch (err: any) {
@@ -156,7 +154,8 @@ class VisitFlowService {
                         steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     );
-                    steps[i].BaseActivities = items.map(i => i?.UUID);
+
+                    steps[i].BaseActivities = items.map(item =>  item?.UUID );
                     
                     steps[i].Completed = this.isStepCompleted(
                         items[0],
@@ -183,7 +182,6 @@ class VisitFlowService {
                 }
 
             }
-            //debugger;
             if (mandatoryIncompleteFound) {
                 this.lockEndActivity(steps);
             }
@@ -209,7 +207,6 @@ class VisitFlowService {
            visit.Groups = groups;
            visit.Title = visit.Name;
         }
-
         return visits;//groupedVisits;
     }
 
@@ -238,7 +235,6 @@ class VisitFlowService {
             let res: any = await pepperi.resources.resource(VISIT_FLOW_GROUPS_TABLE_NAME).search({
                 Fields: ['Key', 'Title', 'SortIndex']
             });
-            //debugger;
 
             if (res?.Objects?.length) {
                 udcGroups = res.Objects;
@@ -255,7 +251,6 @@ class VisitFlowService {
                         }
                     })
                     .value();
-                //debugger;
                 //in case VISIT_FLOW_GROUPS_TABLE_NAME is defined - use it to sort the groups
                 if (udcGroups?.length) {
                     const sortedGroups = groups.sort((a, b) => {
@@ -269,7 +264,6 @@ class VisitFlowService {
                     });
                     groups = sortedGroups;
                 }
-                //debugger;
                 visits.push({
                     Key: visit.Key,
                     Title: visit.Description,
@@ -290,7 +284,6 @@ class VisitFlowService {
 
     private isStepCompleted(item: any, completedStatus: string) {
         try {
-            //debugger;
             if (item) {
                 if (item && item.StatusName === completedStatus) {
                     return true;
@@ -339,7 +332,11 @@ class VisitFlowService {
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
                         filter: {
                             Operation: 'AND',
-                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                            LeftNode: {
+                                Operation: 'AND',
+                                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
+                                , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+                            },
                             RightNode: {
                                 Operation: 'AND',
                                 LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
@@ -349,7 +346,7 @@ class VisitFlowService {
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
                         pageSize: 1
                     });
-                    //debugger;
+
                     if (res?.success && res.objects?.length) {
                         if (creationDateTime) {
                             if (res.objects[0].CreationDateTime >= creationDateTime) {
@@ -367,7 +364,11 @@ class VisitFlowService {
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
                         filter: {
                             Operation: 'AND',
-                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                            LeftNode: {
+                                Operation: 'AND',
+                                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
+                                , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+                            },
                             RightNode: {
                                 Operation: 'AND',
                                 LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
@@ -392,13 +393,13 @@ class VisitFlowService {
                 default:
                     res = await pepperi.resources.resource(resource).search({
                         Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                        Where: `Template='${resourceCreationData}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
+                        Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
 
                     });
                     if (res?.Objects?.length) {
                         //let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime);
                         let templates: any[] = res.Objects;
-
+debugger;
                         if (templates.length) {
                             templates.sort((a, b) => {
                                 if (a.CreationDateTime > b.CreationDateTime) {
@@ -411,15 +412,16 @@ class VisitFlowService {
                             })
                             item = {
                                 UUID: templates[0].Key,
-                                StatusName: templates[0].Status || ''
+                                StatusName: templates[0].StatusName || ''
                             }
 
-                            items = templates;
+                            items = templates.map(obj=> ({UUID: obj.Key, StatusName: obj.StatusName || ''}));;
+
                         }
                     }
                     break;
             }
-            // debugger;
+
             /*if (res?.success === true && res.objects.length) {
                 //search for completed status in all resources
                 item = res.objects[0];
@@ -443,7 +445,6 @@ class VisitFlowService {
 
             return items;
         } catch (err: any) {
-            debugger;
             throw new Error(err.message);
             //return null;
         }
@@ -499,7 +500,6 @@ class VisitFlowService {
             return url;
 
         } catch (err: any) {
-            debugger;
             //if (err?.message) {
             //await data.client?.alert('caught exc', err?.message);
             throw new Error(err.message);
@@ -513,13 +513,12 @@ class VisitFlowService {
         let url = this.getBaseUrl(step.Resource);
         let resource: any;
         let catalogName = '';
-
+debugger;
         try {
-            debugger;
             // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
             // if (step?.BaseActivities?.length) {
             if (step?.BaseActivities?.length && step.BaseActivities[0] !== null) {
-                return url + step.BaseActivities;
+                return url + step.BaseActivities[0];
             } else {
                 if (step.Resource === 'transactions') {
                     catalogName = await this.chooseCatalog(client);
@@ -593,7 +592,6 @@ class VisitFlowService {
             //await client?.alert('catalog choosed result', '');
             // If catalog template was choosen
             if (!catalogResult.canceled) {
-                debugger;
                 if (catalogResult.result.length > 0) {
                     const resObject = JSON.parse(catalogResult.result);
                     if (resObject?.selectedObjectKeys.length > 0) {
@@ -657,7 +655,6 @@ class VisitFlowService {
                     break;
                 }
                 default:
-                    debugger;
                     //@ts-ignore
                     const user: User = await pepperi.environment.user();
                     const newSurvey = await pepperi.resources.resource(resource).post({
@@ -674,7 +671,6 @@ class VisitFlowService {
                     break;
             }
         } catch (err: any) {
-            debugger;
             throw new Error(err.message);
         }
 
