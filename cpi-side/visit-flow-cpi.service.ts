@@ -199,14 +199,18 @@ class VisitFlowService {
                 })
                 .value();
 
+                /*
             groupedVisits.push({
                 Key: visit.Key,
                 Title: visit.Name, //change from description to name for DI-22805
                 Groups: groups
             });
+            */
+           visit.Groups = groups;
+           visit.Title = visit.Name;
         }
 
-        return groupedVisits;
+        return visits;//groupedVisits;
     }
 
     /**
@@ -326,6 +330,8 @@ class VisitFlowService {
             let item: any | null = null;
             let res: any;
             let items: any[] = [];
+            //@ts-ignore
+            const user: User = await pepperi.environment.user();
 
             switch (resource) {
                 case 'activities':
@@ -428,11 +434,12 @@ class VisitFlowService {
             } */
 
             // return item;
+            /*
             if (items.length > 0 && item !== null) {
                 items[0] = item;
             } else {
                 items.push(null);
-            }
+            }*/
 
             return items;
         } catch (err: any) {
