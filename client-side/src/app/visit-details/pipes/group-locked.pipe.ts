@@ -5,17 +5,18 @@ import { IVisitFlowStep } from 'shared';
 export class GroupLockedPipe implements PipeTransform {
     transform(steps: IVisitFlowStep[]) {
         let allDisabled = true;
-        let allCompleted = true;                
+       // let allCompleted = true;                
 
         for (let step of steps) {
             if (!step.Disabled) {                
                 allDisabled = false;                
-            }            
+            }    
+            /*        
             if (!step.Completed) {
                 allCompleted = false;;
-            }            
+            } */           
         }
 
-        return allDisabled || allCompleted;      
+        return allDisabled; /*|| allCompleted;*/      
     }
 }

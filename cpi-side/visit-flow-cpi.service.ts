@@ -325,69 +325,61 @@ class VisitFlowService {
             let items: any[] = [];
             //@ts-ignore
             const user: User = await pepperi.environment.user();
+            
+            const filterObj: any = {
+                Operation: 'AND',
+                LeftNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
+                    , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+                },
+                RightNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
+                    , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
+                }
+            }
 
             switch (resource) {
                 case 'activities':
                     res = await pepperi.api.activities.search({
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
-                        filter: {
-                            Operation: 'AND',
-                            LeftNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
-                                , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
-                            },
-                            RightNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-                            }
-                        },
+                        filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: 1
+                        pageSize: 100
                     });
 
                     if (res?.success && res.objects?.length) {
-                        if (creationDateTime) {
-                            if (res.objects[0].CreationDateTime >= creationDateTime) {
-                                item = res.objects[0];
+                        const stepActivities = res.objects.filter(activityObj => {
+                            let res = false;
+                            if (activityObj) {
+                                if (activityObj.CreationDateTime >= startDateTime) {
+                                    res = true;
+                                }
                             }
-                        } else {
-                            item = res.objects[0];
-                        }
-
-                        items = res.objects;
+                            return res;
+                        });
+                        items = stepActivities;
                     }
                     break;
                 case 'transactions':
                     res = await pepperi.api.transactions.search({
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
-                        filter: {
-                            Operation: 'AND',
-                            LeftNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
-                                , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
-                            },
-                            RightNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-                            }
-                        },
+                        filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: 1
+                        pageSize: 100
                     });
                     if (res?.success && res.objects?.length) {
-                        if (creationDateTime) {
-                            if (res.objects[0].CreationDateTime >= creationDateTime) {
-                                item = res.objects[0];
+                        const stepTransactions = res.objects.filter(transactionObj => {
+                            let res = false;
+                            if (transactionObj) {
+                                if (transactionObj.CreationDateTime >= startDateTime) {
+                                    res = true;
+                                }
                             }
-                        } else {
-                            item = res.objects[0];
-                        }
-
-                        items = res.objects;
+                            return res;
+                        });
+                        items = stepTransactions;
                     }
                     break;
                 default:
@@ -397,9 +389,7 @@ class VisitFlowService {
 
                     });
                     if (res?.Objects?.length) {
-                        //let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime);
-                        let templates: any[] = res.Objects;
-debugger;
+                        let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime); 
                         if (templates.length) {
                             templates.sort((a, b) => {
                                 if (a.CreationDateTime > b.CreationDateTime) {
@@ -421,28 +411,7 @@ debugger;
                     }
                     break;
             }
-
-            /*if (res?.success === true && res.objects.length) {
-                //search for completed status in all resources
-                item = res.objects[0];
-                if (completedStatus) {
-                    for (let resource of res.objects) {
-                        if (resource.StatusName === completedStatus) {
-                            item = resource;
-                            break;
-                        }
-                    }
-                }
-            } */
-
-            // return item;
-            /*
-            if (items.length > 0 && item !== null) {
-                items[0] = item;
-            } else {
-                items.push(null);
-            }*/
-
+            
             return items;
         } catch (err: any) {
             throw new Error(err.message);
