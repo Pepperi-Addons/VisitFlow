@@ -47,7 +47,8 @@ class VisitFlowService {
                 pepperi.resources.resource(resourceName).search({ Where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
-            if (res?.length === 2 && res[0].length) {
+            debugger;
+            if (res?.length === 2 && typeof(res[0]) != 'undefined') {
                 this._activeVisits = res[0];
                 //console.log('start end activitiies found', res[1].objects?.length);
                 if (res[1].success && res[1].objects?.length) {
