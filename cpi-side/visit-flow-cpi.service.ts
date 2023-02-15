@@ -44,7 +44,7 @@ class VisitFlowService {
 
         try {
             const res: any = await Promise.all([
-                pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
+                pepperi.resources.resource(resourceName).search({ Where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
             if (res?.length === 2 && res[0].length) {
