@@ -44,12 +44,12 @@ class VisitFlowService {
 
         try {
             const res: any = await Promise.all([
-                pepperi.resources.resource(resourceName).search({ Where: 'Active = true' }),
+                pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
-            debugger;
+ 
             if (res?.length === 2 && typeof(res[0]) != 'undefined') {
-                this._activeVisits = res[0];
+                this._activeVisits = res[0].filter(obj => obj.Active == true );
                 //console.log('start end activitiies found', res[1].objects?.length);
                 if (res[1].success && res[1].objects?.length) {
                     inProgressVisit = await this.getInProgressVisit(res[1].objects[0]);
@@ -95,12 +95,11 @@ class VisitFlowService {
     async createVisitFlows(inProgressVisit: IInProgressVisit | null = null) {
         let visitFlows: IVisitFlow[] = [];
         let udcVisits;
-
         try {
             if (inProgressVisit) {
                 udcVisits = [this._activeVisits[inProgressVisit.ActiveVisitIndex]];
             } else {
-                udcVisits = this._activeVisits;
+                    udcVisits = this._activeVisits;
             }
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
             //visitFlows = await this.convertToVisitFlows(udcVisits);
@@ -114,6 +113,7 @@ class VisitFlowService {
     private async convertToVisitGroups(visits: any[], inProgress: IInProgressVisit | null) {
         let udcGroups: any[] = [];
         let groupedVisits: any[] = [];
+
         let res: any = await pepperi.resources.resource(VISIT_FLOW_GROUPS_TABLE_NAME).search({
             Fields: ['Key', 'Title', 'SortIndex']
         });
@@ -483,7 +483,7 @@ class VisitFlowService {
         let url = this.getBaseUrl(step.Resource);
         let resource: any;
         let catalogName = '';
-debugger;
+
         try {
             // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
             // if (step?.BaseActivities?.length) {
