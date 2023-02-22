@@ -14,6 +14,9 @@ export const USER_ACTION_ON_VISIT_FLOW_LOAD = 'OnVisitFlowViewLoad';
 
 export const CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK = 'OnClientVisitFlowStepClick';
 export const USER_ACTION_ON_VISIT_FLOW_STEP_CLICK = 'OnVisitFlowStepClick';
+
+export const CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK = 'OnClientVisitFlowGroupClick';
+export const USER_ACTION_ON_VISIT_FLOW_GROUP_CLICK = 'OnVisitFlowGroupClick';
 // **********************************************************************************************
 
 export interface IVisitFlow {  

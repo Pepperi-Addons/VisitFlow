@@ -7,6 +7,8 @@ import {
     USER_ACTION_ON_VISIT_FLOW_LOAD,
     CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK,
     USER_ACTION_ON_VISIT_FLOW_STEP_CLICK,
+    CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK,
+    USER_ACTION_ON_VISIT_FLOW_GROUP_CLICK,
     VISIT_FLOW_MAIN_ACTIVITY,
     VISIT_FLOWS_BASE_TABLE_NAME,
     VISIT_FLOW_STEPS_TABLE_NAME,
@@ -109,6 +111,61 @@ export async function load(configuration: any) {
             } else {
                 return {};
             }
+        } catch (err: any) {
+            await data.client?.alert('Error:', err.message);
+            return {};
+        }
+    });
+
+    pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK as any, {}, async (data): Promise<any> => {
+        try {
+            let inputData = {
+                AccountUUID: data.AccountUUID,
+                Visit: data.Visit,
+                SelectedGroup: data.SelectedGroup
+            }
+            let visit: any = {}
+            const visitkey = inputData.Visit?.Key || '';
+            try {
+                const res = (await pepperi.resources.resource(VISIT_FLOWS_BASE_TABLE_NAME).search({KeyList: [visitkey], Fields: ['ResourceName']})).Objects || [];
+                if(res?.length > 0) {
+                    visit = res[0];
+                }
+
+            }
+            catch (err) {
+                console.log(`could not found visit with key ${visitkey}`);
+            }
+            // Emit user event OnVisitFlowGroupClick
+            const eventRes: any = await pepperi.events.emit(USER_ACTION_ON_VISIT_FLOW_GROUP_CLICK, {
+                Data: inputData,
+                ObjectType: visit.ResourceName
+            }, data);
+
+            if (eventRes?.data?.Data) {
+                inputData = eventRes.data.Data;
+            }
+
+            const service = new VisitFlowService(inputData.AccountUUID);
+            let url: string | undefined = undefined;
+
+            if (
+                inputData?.SelectedGroup?.GroupIndex >= 0 &&
+                inputData.SelectedGroup.StepIndex >= 0 &&
+                inputData.Visit?.Groups?.length &&
+                inputData.Visit.Groups[inputData.SelectedGroup.GroupIndex]?.Steps?.length
+            ) {
+                const group = inputData.Visit.Groups[inputData.SelectedGroup.GroupIndex];//.Steps[inputData.SelectedGroup.StepIndex];
+                //url = await service.getStepUrl(data.client as any, group, inputData.Visit?.Key);
+            }
+
+            // if (url) {
+            //     await data.client?.navigateTo({ url: url });
+            // } else {
+            //     return {};
+            // }
+            return {};
+            
         } catch (err: any) {
             await data.client?.alert('Error:', err.message);
             return {};
