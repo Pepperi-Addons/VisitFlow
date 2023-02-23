@@ -1,5 +1,6 @@
 import { IClient } from '@pepperi-addons/cpi-node/build/cpi-side/events';
 import { activityType2ResourceType } from '@pepperi-addons/cpi-node/build/cpi-side/wrappers';
+
 import {
     IVisitFlow,
     VISIT_FLOW_GROUPS_TABLE_NAME,
@@ -47,7 +48,7 @@ class VisitFlowService {
                 pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
- 
+         
             if (res?.length === 2 && typeof(res[0]) != 'undefined') {
                 this._activeVisits = res[0].filter(obj => obj.Active == true );
                 //console.log('start end activitiies found', res[1].objects?.length);
@@ -101,12 +102,64 @@ class VisitFlowService {
             } else {
                     udcVisits = this._activeVisits;
             }
+            udcVisits = this.filterUnActiveSurvey(udcVisits);
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
             //visitFlows = await this.convertToVisitFlows(udcVisits);
 
            // return visitFlows;
         } catch (err: any) {
             throw new Error(err.message);
+        }
+    }
+
+    private filterUnActiveSurvey(udcVisits){
+        for (const visit of udcVisits) {
+            // check if current visit is Active
+            if(visit.Active){
+                // run on all visit steps & look for survey
+                //const surveys = visit.steps.filter(step => step.Resource == 'MySurveys');
+                
+                visit.steps.forEach(async (step,index) => {
+                    if(step.Resource == 'MySurveys'){
+                        // get survey template by key and check if active and in date range
+                        const surveyTtemplate = await this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
+                        if(!this.isActiveSurvey(surveyTtemplate)){
+                            // remove this survey from steps list
+                            visit.steps.splice(index,1);
+                        }
+                    }
+                });
+            }
+        }
+        return udcVisits;
+    }
+
+    async getSurvey(resource: string, key: string) {
+        let res: any = await pepperi.resources.resource(resource).search({
+            Fields: ['Key','Active', 'ActiveDateRange'],
+            Where: `Key='${key}'`
+        });
+
+        return res.Objects[0] || {} as any;
+    }
+
+    isActiveSurvey(survey){
+        if(survey?.Active){
+            // check if has active range & today on range
+            if(survey.ActiveDateRange){
+
+                const dateFrom = new Date(survey.ActiveDateRange.From).getTime();
+                const dateTo = new Date(survey.ActiveDateRange.To).getTime();
+                const today = new Date().getTime();
+                // check if today date in active date range
+                return dateFrom < today && dateTo > today;
+            }
+            else{
+                return true;
+            }
+        }
+        else{
+            return false;
         }
     }
 
@@ -389,6 +442,7 @@ class VisitFlowService {
                         Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
 
                     });
+                    
                     if (res?.Objects?.length) {
                         let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime); 
                         if (templates.length) {
