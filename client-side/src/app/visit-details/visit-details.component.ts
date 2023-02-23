@@ -43,11 +43,9 @@ export class VisitDetailsComponent implements OnInit {
     
     onGroupClicked(index: number) {
         console.log('onGroupClicked', index);
-        //this.selectedGroup = group;
-        this.selectedGroupIndex = index;
 
-        console.log('onGroupClicked', this.groups[this.selectedGroupIndex]);
-        this._visitDetailsService.onGroupClicked(this.groups[this.selectedGroupIndex]); 
+        this.selectedGroupIndex = index;
+        this._visitDetailsService.onGroupClicked(this.groups[index]); 
     }
 
     onStepClicked(index: number) {
