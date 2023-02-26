@@ -163,7 +163,12 @@ export class FlowService {
                 },
                 Completed:
                 {
-                    Type: 'String'
+                    Indexed: false,
+                    IndexedFields: {},
+                    Items: {
+                        Type: 'String'
+                    },
+                    Type: 'Array'
                 }
             }
         }
