@@ -40,7 +40,7 @@ export interface IVisitFlowStep {
     Mandatory: boolean;
     Disabled?: boolean;
     Completed: boolean;
-    CompletedStatusName: string;
+    CompletedStatusName: any; // can be string on old steps scheme or array with the new scheme (ver 0.6.2)
     DepandsOnStep?: number;
     [key: string]: any;
 }
