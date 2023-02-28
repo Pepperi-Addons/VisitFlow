@@ -192,6 +192,7 @@ class VisitFlowService {
             //            
             let starterFound = false;
             let mandatoryIncompleteFound = false;
+
             for (let i = 0; i < steps.length; i++) {
                 //let step: any = _.clone(steps[i]);
                 steps[i].CompletedStatusName =  steps[i].Completed;
@@ -336,14 +337,18 @@ class VisitFlowService {
         return item ? item.Title : 'N/A';
     }
 
-    private isStepCompleted(item: any, completedStatus: string) {
+    private isStepCompleted(item: any, completedStatus: any) {
         try {
-            if (item) {
-                if (item && item.StatusName === completedStatus) {
-                    return true;
-                } else {
-                    return false;
+            if (item?.StatusName && completedStatus) {
+                if(typeof completedStatus == 'string'){
+                    // for the old scheme completed status name
+                    return item?.StatusName === completedStatus;
                 }
+                else{
+                    // for the new multi select completed status names
+                    return completedStatus.includes(item.StatusName);  
+                }
+                    
             } else {
                 return false;
             }
