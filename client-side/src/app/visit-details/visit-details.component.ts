@@ -38,13 +38,14 @@ export class VisitDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        
+
     }
     
     onGroupClicked(index: number) {
         console.log('onGroupClicked', index);
-        //this.selectedGroup = group;
+
         this.selectedGroupIndex = index;
+        this._visitDetailsService.onGroupClicked(this.groups[index]); 
     }
 
     onStepClicked(index: number) {

@@ -163,7 +163,10 @@ export class FlowService {
                 },
                 Completed:
                 {
-                    Type: 'String'
+                    Type: 'Array',
+                    Items: {
+                        Type: 'String'
+                    }
                 }
             }
         }

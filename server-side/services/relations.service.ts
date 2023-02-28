@@ -26,12 +26,11 @@ export class RelationsService {
     
     async upsetRelationAndScheme(install = true) {
         try {
-            if (install) {
                 await this.createSchemeTables();
-            }
-            await this.upsertUserEventsRelation();
-            await this.upsertBlockRelation('VisitFlow', true);
-        } catch (err: any) {
+                await this.upsertUserEventsRelation();
+                await this.upsertBlockRelation('VisitFlow', true);
+        } 
+        catch (err: any) {
             throw new Error(err.message);
         }
     }
