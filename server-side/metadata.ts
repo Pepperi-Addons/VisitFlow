@@ -43,6 +43,18 @@ export const VisitFlowTSAFields: ApiFieldObject[] = [
         },
         Type: "String",
         Format: "String"
+    },
+    {
+        FieldID: "TSAVisitSelectedGroup",
+        Label: "VisitSelectedGroup",
+        Description: "Visit Selected Group",
+        IsUserDefinedField: true,
+        UIType: {
+            ID: 1,
+            Name: "TextBox"
+        },
+        Type: "String",
+        Format: "String"
     }
 ]
 

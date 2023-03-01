@@ -54,6 +54,7 @@ class VisitFlowService {
                 //console.log('start end activitiies found', res[1].objects?.length);
                 if (res[1].success && res[1].objects?.length) {
                     inProgressVisit = await this.getInProgressVisit(res[1].objects[0]);
+                    // TODO AVNER - start end activity exist & we have selected group
                 }
             }
 
@@ -358,9 +359,9 @@ class VisitFlowService {
         }
     }
 
-    private getStartEndActivitiesPromise() {
+    public getStartEndActivitiesPromise() {
         return pepperi.api.activities.search({
-            fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime', 'TSAFlowID'],
+            fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime', 'TSAFlowID','TSAVisitSelectedGroup'],
             filter: {
                 Operation: 'AND',
                 LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
@@ -373,7 +374,6 @@ class VisitFlowService {
             sorting: [{ Field: 'CreationDateTime', Ascending: false }],
             pageSize: 1
         });
-
     }
 
     private async getResourceItems(resource: string, resourceCreationData: string, creationDateTime: string) {

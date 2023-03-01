@@ -118,6 +118,30 @@ export async function load(configuration: any) {
     });
 
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK as any, {}, async (data): Promise<any> => {
+        
+        const _visitFlowService = new VisitFlowService(data.AccountUUID);
+        const res: any = await _visitFlowService.getStartEndActivitiesPromise();
+        
+        // TODO - need to save the selected group on the TSA 
+        try{
+            // const res: any = await pepperi.app.activities.update({
+            //     type: {
+            //         Name: VISIT_FLOW_MAIN_ACTIVITY
+            //     },
+            //     references: {
+            //         account: {
+            //             UUID: data.AccountUUID
+            //         }
+            //     },
+            //     object: {
+            //         TSAVisitSelectedGroup: data.SelectedGroup.Key
+            //     }
+            // }) ;
+        }
+        catch(e){
+
+        }
+
         try {
             let inputData = {
                 AccountUUID: data.AccountUUID,
