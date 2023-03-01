@@ -47,6 +47,26 @@ export async function load(configuration: any) {
                     visits = eventRes.data.Visits;
                 }
                 if (visits?.length) {
+
+                    try{
+                        const _visitFlowService = new VisitFlowService(data.AccountUUID);
+                        const res: any = await _visitFlowService.getStartEndActivitiesPromise();
+                        if(res?.objects){
+                            const activity = await pepperi.DataObject.Get('activities',res.objects[0].UUID);
+                            const selectedGroup = await activity?.getFieldValue('TSAVisitSelectedGroup');
+                            // check if this tsa exits and have a value
+                            if(selectedGroup){
+                                //check if visit groups contain the selected group
+                                //could be remove by user event
+                                //if not found return undefined
+                                visits[0]['selectedGroup'] = visits[0].Groups.filter(group => group.Key == selectedGroup).length === 1 ? selectedGroup : undefined;
+                            }
+                        }
+                    }
+                    catch(err: any){
+                        await data.client?.alert('Error on get selected group:', err.message);
+                    }
+
                     return {
                         Visits: visits
                     };
@@ -118,28 +138,16 @@ export async function load(configuration: any) {
     });
 
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK as any, {}, async (data): Promise<any> => {
-        
-        const _visitFlowService = new VisitFlowService(data.AccountUUID);
-        const res: any = await _visitFlowService.getStartEndActivitiesPromise();
-        
-        // TODO - need to save the selected group on the TSA 
         try{
-            // const res: any = await pepperi.app.activities.update({
-            //     type: {
-            //         Name: VISIT_FLOW_MAIN_ACTIVITY
-            //     },
-            //     references: {
-            //         account: {
-            //             UUID: data.AccountUUID
-            //         }
-            //     },
-            //     object: {
-            //         TSAVisitSelectedGroup: data.SelectedGroup.Key
-            //     }
-            // }) ;
+            const _visitFlowService = new VisitFlowService(data.AccountUUID);
+            const res: any = await _visitFlowService.getStartEndActivitiesPromise();
+            if(res?.objects){
+                const activity = await pepperi.DataObject.Get('activities',res.objects[0].UUID);
+                await activity?.setFieldValue('TSAVisitSelectedGroup',data.SelectedGroup.Key);
+            }
         }
-        catch(e){
-
+        catch(err: any){
+            await data.client?.alert('Error on set selected group:', err.message);
         }
 
         try {

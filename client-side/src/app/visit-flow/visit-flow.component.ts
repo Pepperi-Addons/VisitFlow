@@ -1,6 +1,7 @@
 import { TranslateService } from '@ngx-translate/core';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { VisitFlowService } from './visit-flow.service';
+
 import { of } from 'rxjs';
 import { PepLayoutService, PepScreenSizeType } from '@pepperi-addons/ngx-lib';
 
