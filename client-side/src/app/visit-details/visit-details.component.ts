@@ -11,11 +11,11 @@ import { VisitFlowService } from '../visit-flow/visit-flow.service';
     providers: [VisitDetailsService]
 })
 export class VisitDetailsComponent implements OnInit {      
-    @Input()
-    set visit(visit: IVisitFlow)  {
-        console.log('visit', visit);
-        this._visitDetailsService.visit = visit;
-    }
+    @Input() visit 
+    // set visit(visit: IVisitFlow)  {
+    //     console.log('visit', visit);
+    //     this._visitDetailsService.visit = visit;
+    // }
 
     @Input() 
     set accountUUID(val: string) {
@@ -35,10 +35,19 @@ export class VisitDetailsComponent implements OnInit {
         private _visitDetailsService: VisitDetailsService,
         private _visitFlowService: VisitFlowService
     ) {
+       
     }
 
     ngOnInit(): void {
-
+        this._visitDetailsService.visit = this.visit;
+        
+        if(this.visit?.Groups?.length && this.visit.selectedGroup){
+            for(let i =0; i< this.visit?.Groups?.length; i++){
+                if(this.visit?.Groups[i].Key === this.visit.selectedGroup){
+                    this.selectedGroupIndex = i;
+                }
+            }
+        }
     }
     
     onGroupClicked(index: number) {
