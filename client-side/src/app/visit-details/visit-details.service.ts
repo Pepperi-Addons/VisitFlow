@@ -9,7 +9,8 @@ import _ from 'lodash';
 @Injectable()
 export class VisitDetailsService {
     private _visit: IVisitFlow | null = null;    
-    private _accountUUID;    
+    private _accountUUID; 
+    private _selectedGroup;   
         
     set visit(val: IVisitFlow) {
         this._visit = val;
@@ -30,7 +31,8 @@ export class VisitDetailsService {
         this._addonService.emitEvent(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK, {
             AccountUUID: this._accountUUID,
             Visit: this._visit,
-            SelectedStep: selectedStep            
+            SelectedStep: selectedStep,
+            SelectedGroup: this._selectedGroup            
         }).then(res => {
             console.log('res', res);
             if (res?.Status === 'failure') {
@@ -40,7 +42,8 @@ export class VisitDetailsService {
     }
 
     onGroupClicked(selectedGroup: any) {
-        console.log('selectedGroup', selectedGroup);
+        this._selectedGroup = selectedGroup;
+        
         this._addonService.emitEvent(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK, {
             AccountUUID: this._accountUUID,
             Visit: this._visit,
