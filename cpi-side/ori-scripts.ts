@@ -281,7 +281,7 @@ export async function onVisitLoadScript(data: any) {
             hIndex: number,
             promise: any
         }[] = [];
-debugger;
+
         for (let i = 0; i < visits.length; i++) {
             for (let j = 0; j < visits[i].Groups.length; j++) {
                 for (let h = 0; h < visits[i].Groups[j].Steps.length; h++) {
@@ -391,11 +391,14 @@ debugger;
                 }
                 break;
             default:
-                debugger;
+                 var date = new Date();
+                 var firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                // var lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
                 res = await pepperi.resources.resource(resource).search({
                     Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                    Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >= '${getStartTime(frequencyType, frequencyValue)}'`
-
+                    //Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >= '${getStartTime(frequencyType, frequencyValue)}'`
+                    Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >=' ${firstDayOfMonth}'`
                 });
                 break; 
         }
