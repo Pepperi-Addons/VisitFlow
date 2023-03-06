@@ -193,7 +193,7 @@ class VisitFlowService {
             //            
             let starterFound = false;
             let mandatoryIncompleteFound = false;
-
+            
             for (let i = 0; i < steps.length; i++) {
                 //let step: any = _.clone(steps[i]);
                 steps[i].CompletedStatusName =  steps[i].Completed;
@@ -216,6 +216,18 @@ class VisitFlowService {
                     steps[i].Completed = this.isStepCompleted(
                         items[0],
                         steps[i].Completed);
+                    
+                    /*
+                    If a step is completed it should be disabled only if: 
+                            The count of the ‘baseActivities’ is equal to the value of step allowedCount.
+                            In case maxCount is 0 or empty, it should be considered as 
+                            unlimited so the step should not be disabled.
+                    */
+                    if(steps[i].Completed && steps[i].MaxCount != undefined && steps[i].MaxCount != 0 && steps[i].MaxCount != ''){
+                        if(steps[i].BaseActivities.length >= steps[i].MaxCount){
+                            steps[i].Disabled = true;
+                        }
+                    }
                     //in case of an imcomplete mandatory activity - lock End activity
                     if (
                         steps[i].Mandatory &&

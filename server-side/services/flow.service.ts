@@ -167,6 +167,10 @@ export class FlowService {
                     Items: {
                         Type: 'String'
                     }
+                },
+                MaxCount:
+                {
+                    Type: 'Integer'
                 }
             }
         }

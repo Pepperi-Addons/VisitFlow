@@ -44,16 +44,16 @@ export class VisitDetailsService {
     onGroupClicked(selectedGroup: any) {
         this._selectedGroup = selectedGroup;
         
-        this._addonService.emitEvent(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK, {
-            AccountUUID: this._accountUUID,
-            Visit: this._visit,
-            SelectedGroup: selectedGroup            
-        }).then(res => {
-            console.log('res', res);
-            if (res?.Status === 'failure') {
-                console.log('Error:', res.Error);
-            }
-        });   
+        // this._addonService.emitEvent(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_GROUP_CLICK, {
+        //     AccountUUID: this._accountUUID,
+        //     Visit: this._visit,
+        //     SelectedGroup: selectedGroup            
+        // }).then(res => {
+        //     console.log('res', res);
+        //     if (res?.Status === 'failure') {
+        //         console.log('Error:', res.Error);
+        //     }
+        // });   
     }
    
 }

@@ -41,9 +41,9 @@ export class VisitDetailsComponent implements OnInit {
     ngOnInit(): void {
         this._visitDetailsService.visit = this.visit;
         
-        if(this.visit?.Groups?.length && this.visit.selectedGroup){
+        if(this.visit?.Groups?.length && this.visit.SelectedGroup){
             for(let i =0; i< this.visit?.Groups?.length; i++){
-                if(this.visit?.Groups[i].Key === this.visit.selectedGroup){
+                if(this.visit?.Groups[i].Key === this.visit.SelectedGroup){
                     this.selectedGroupIndex = i;
                 }
             }

@@ -16,6 +16,7 @@ import {
     VISIT_FLOWS_TABLE_NAME
 } from 'shared';
 import { UtilsService } from './utils.service';
+// import { onVisitLoadScript } from './ori-scripts';
 
 export async function load(configuration: any) {
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD as any, {}, async (data): Promise<any> => {
@@ -35,6 +36,7 @@ export async function load(configuration: any) {
                     await data.client?.alert('Error', 'Visits were not defined');
                     return {};
                 }
+                
                 const eventRes: any = await pepperi.events.emit(USER_ACTION_ON_VISIT_FLOW_LOAD, {
                     Data: {           
                         AccountUUID: data.AccountUUID,             
@@ -42,10 +44,23 @@ export async function load(configuration: any) {
                     },
                     ObjectType: data.ResourceName                    
                 }, data);
-
-                if (eventRes?.data?.Visits) {
-                    visits = eventRes.data.Visits;
+                
+                if (eventRes?.Data.Visits) {
+                        visits = eventRes.Data.Visits;
                 }
+
+                // const eventRes: any = await onVisitLoadScript({
+                //     data: {           
+                //         AccountUUID: data.AccountUUID,             
+                //         Visits: visits                        
+                //     },
+                //     ObjectType: data.ResourceName                    
+                // });
+
+                // if (eventRes?.Visits) {
+                //     visits = eventRes.Visits;
+                // }
+
                 if (visits?.length) {
                     if(visits.length === 1){
                         try{
@@ -59,7 +74,7 @@ export async function load(configuration: any) {
                                     //check if visit groups contain the selected group
                                     //could be remove by user event
                                     //if not found return undefined
-                                    visits[0]['selectedGroup'] = visits[0].Groups.filter(group => group.Key == selectedGroup).length === 1 ? selectedGroup : undefined;
+                                    visits[0]['SelectedGroup'] = visits[0].Groups.filter(group => group.Key == selectedGroup).length === 1 ? selectedGroup : undefined;
                                 }
                             }
                         }
