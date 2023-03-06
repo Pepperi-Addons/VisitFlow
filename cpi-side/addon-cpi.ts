@@ -45,8 +45,12 @@ export async function load(configuration: any) {
                     ObjectType: data.ResourceName                    
                 }, data);
                 
-                if (eventRes?.Data.Visits) {
-                        visits = eventRes.Data.Visits;
+                // if (eventRes?.Data.Visits) {
+                //         visits = eventRes.Data.Visits;
+                // }
+
+                if (eventRes?.data?.Visits) {
+                    visits = eventRes.data.Visits;
                 }
 
                 // const eventRes: any = await onVisitLoadScript({
@@ -99,17 +103,19 @@ export async function load(configuration: any) {
     });
 
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK as any, {}, async (data): Promise<any> => {
-        try{
-            const _visitFlowService = new VisitFlowService(data.AccountUUID);
-            const res: any = await _visitFlowService.getStartEndActivitiesPromise();
-   
-            if(res?.objects && res.objects.length > 0){
-                const activity = await pepperi.DataObject.Get('activities',res.objects[0].UUID);
-                await activity?.setFieldValue('TSAVisitSelectedGroup',data.SelectedGroup.Key);
+        if(data?.SelectedGroup){
+            try{
+                const _visitFlowService = new VisitFlowService(data.AccountUUID);
+                const res: any = await _visitFlowService.getStartEndActivitiesPromise();
+    
+                if(res?.objects && res.objects.length > 0){
+                    const activity = await pepperi.DataObject.Get('activities',res.objects[0].UUID);
+                    await activity?.setFieldValue('TSAVisitSelectedGroup',data.SelectedGroup.Key);
+                }
             }
-        }
-        catch(err: any){
-            await data.client?.alert('Error on set selected group:', err.message);
+            catch(err: any){
+                await data.client?.alert('Error on set selected group:', err.message);
+            }
         }
         try {
             let inputData = {
