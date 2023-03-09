@@ -42,7 +42,8 @@ export class RelationsService {
                 
             if (type?.TypeID) {         
                 await flowService.createTSAFields(type.TypeID);
-                await flowService.createSchemas();        
+                await flowService.createSchemas();  
+                // remove this code ,after talking with Roi, he told me that we don't need to add UDCS here.      
                 await flowService.upsertUDCs();
             }    
         } catch (err: any) {

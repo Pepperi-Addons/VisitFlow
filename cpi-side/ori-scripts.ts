@@ -9,7 +9,7 @@ export interface Step {
     Disabled: boolean;
     Completed: boolean;
     CompletedStatusName: string[];
-    allowedCount: number;
+    MaxCount: number;
     salesChannelSelector: string[];
     profileSelection: string[];
     additionalVisitData: string;
@@ -49,6 +49,7 @@ export const DEBUG_ENABLED = true;
 export const VISIT_FLOW_MAIN_ACTIVITY = 'VF_VisitFlowMainActivity';
 
 export async function onVisitLoadScript(data: any) {
+
     //await client.alert("Yo", 'OnVisitFlowLoad');
     //await debug(JSON.stringify(data));
 
@@ -111,12 +112,12 @@ export async function onVisitLoadScript(data: any) {
                 filterVisits(visits, division);
 
                 //await client.alert('main', 'before filterHidden');
-                filterProfileAndSalesChannel(visits, userProfile, salesChannel);
+                filterProfileAndSalesChannel(visits, profile, salesChannel);
 
-                await duplicateSteps(visits, userProfile);
+                await duplicateSteps(visits, profile);
 
                 //await client.alert('main', 'before filterByFrequency');
-                await filterByFrequency(visits, accountUUID);
+                //filterByFrequency(visits, accountUUID);
 
                 await filterBaseActivities(visits);
                 await markDisabled(visits);
@@ -292,14 +293,15 @@ export async function onVisitLoadScript(data: any) {
                         step.frequencyType && step.frequencyType != 'None' && step.frequencyType != '' &&
                         step.frequencyValue && step.frequencyValue > 0
                     ) {
+                        //await client.alert("Step", JSON.stringify(step));
                         const stepActivities: any = await getLastExecutedInstance(accountUUID, step);
-                    
-                        if(stepActivities?.count >= step.frequencyValue){
+
+                        if (stepActivities?.count >= step.frequencyValue) {
                             promiseList.push({
                                 iIndex: i,
                                 jIndex: j,
                                 hIndex: h,
-                                promise: stepActivities
+                                promise: ""
                             });
                         }
                     }
@@ -308,10 +310,20 @@ export async function onVisitLoadScript(data: any) {
         }
 
         if (promiseList.length) {
+            for (let i = 0; i < promiseList.length; i++) {
+                    //if (promiseList[i]?.objects?.length > 0 || promiseList[i]?.Objects?.length > 0) {
+                        //found similar resource in date range - remove item
+                        visits[promiseList[i].iIndex].Groups[promiseList[i].jIndex].Steps.splice(promiseList[i].hIndex, 1);
+                    //}
+                }
+
+
+
+            /*
             const promises = promiseList.map(item => item.promise);
             let res: any = [];
             try {
-              res = await Promise.all(promises);
+                res = await Promise.all(promises);
             }
             catch (error) {
                 // error handle
@@ -324,6 +336,7 @@ export async function onVisitLoadScript(data: any) {
                     }
                 }
             }
+            */
         }
     }
 
@@ -331,10 +344,10 @@ export async function onVisitLoadScript(data: any) {
      * retrive a promise of the last instance
      */
     async function getLastExecutedInstance(accountUUID: string, step: any) {
-        
-        const resource = step.Resource; 
+
+        const resource = step.Resource;
         const resourceCreationData = step.ResourceCreationData;
-        const frequencyType = step.frequencyType[0];
+        const frequencyType = step.frequencyType;
         const frequencyValue = step.frequencyValue.toString();
 
         let item: any | null = null;
@@ -343,34 +356,34 @@ export async function onVisitLoadScript(data: any) {
         const user: User = await pepperi.environment.user();
         const accountUUIDStr = accountUUID.replace(/-/g, '');
         const filterObj: any = {
-                        Operation: 'AND',
-                        LeftNode: {
-                            Operation: 'AND',
-                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisMonth', Values: [] }
-                            , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
-                        },
-                        RightNode: {
-                            Operation: 'AND',
-                            LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [accountUUIDStr] }
-                            , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-                        }
+            Operation: 'AND',
+            LeftNode: {
+                Operation: 'AND',
+                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'ThisMonth', Values: [] }
+                , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+            },
+            RightNode: {
+                Operation: 'AND',
+                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [accountUUIDStr] }
+                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
+            }
         };
 
         const sorting = [{ Field: 'CreationDateTime', Ascending: false }];
-        const fields = ['UUID', 'CreationDateTime','StatusName','TSAVisitData','CatalogExternalID'];
+        const fields = ['UUID', 'CreationDateTime', 'StatusName', 'TSAVisitData', 'CatalogExternalID'];
         switch (resource) {
             case 'activities':
                 res = await pepperi.api.activities.search({
                     fields: fields,
                     filter: filterObj,
                     sorting: sorting,
-                    pageSize: 100
+                    pageSize: -1
                 });
 
-                if(res?.success && res.objects?.length){
+                if (res?.success && res.objects?.length) {
                     res.objects = res.objects.filter(act => step.CompletedStatusName.includes(act.StatusName));
                     // update the count property after filtering
-                    res.count = res.objects.length || 0; 
+                    res.count = res.objects.length || 0;
                 }
                 break;
             case 'transactions':
@@ -378,29 +391,26 @@ export async function onVisitLoadScript(data: any) {
                     fields: fields,
                     filter: filterObj,
                     sorting: sorting,
-                    pageSize: 100
+                    pageSize: -1
                 });
 
-                if(res?.success && res.objects?.length){
+                if (res?.success && res.objects?.length) {
                     // filter the array by: Catalog, Completed && additional data
                     res.objects = res.objects.filter(act => act.CatalogExternalID === step.catalogToUse &&
-                                                            act.TSAVisitData === step.additionalVisitData &&
-                                                            step.CompletedStatusName.includes(act.StatusName));
+                        act.TSAVisitData === step.additionalVisitData &&
+                        step.CompletedStatusName.includes(act.StatusName));
                     // update the count property after filtering
-                    res.count = res.objects.length || 0; 
+                    res.count = res.objects.length || 0;
                 }
                 break;
             default:
-                 var date = new Date();
-                 var firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-                // var lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-
+                debugger;
                 res = await pepperi.resources.resource(resource).search({
                     Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                    //Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >= '${getStartTime(frequencyType, frequencyValue)}'`
-                    Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >=' ${firstDayOfMonth}'`
+                    Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >= '${getStartTime(frequencyType, frequencyValue)}'`
+
                 });
-                break; 
+                break;
         }
         return res;
     }
@@ -432,7 +442,7 @@ export async function onVisitLoadScript(data: any) {
     */
     async function filterBaseActivities(visits: Visit[]) {
         for (const visit of visits) {
-            let inProgress = visit.Groups[0]?.Steps[0].Completed;
+            let inProgress = visit.Groups[0]?.Steps[0]?.Completed;
             if (inProgress) {
                 for (const group of visit.Groups) {
                     for (const step of group.Steps) {
@@ -458,7 +468,7 @@ export async function onVisitLoadScript(data: any) {
                                     }))
 
                                     step.Completed = activityObjects.find(obj => step.CompletedStatusName.some(e => e === obj?.StatusName)) != undefined;
-                                    step.Disabled = step.allowedCount ? activityObjects.length >= step.allowedCount : step.Completed;
+                                    step.Disabled = step.MaxCount ? activityObjects.length >= step.MaxCount : (step.ResourceCreationData === VISIT_FLOW_MAIN_ACTIVITY && step.Completed);
                                 }
                                 break;
                             }
@@ -485,6 +495,7 @@ export async function onVisitLoadScript(data: any) {
                                                 ...(await getTransaction(transactionUUID, fields)).object
                                             } as any;
                                         }
+                                        //await client.alert("****** transactionObj ******", JSON.stringify(transactionObj));
                                         return transactionObj;
                                     }))
 
@@ -493,8 +504,9 @@ export async function onVisitLoadScript(data: any) {
                                         if (transactionObj) {
                                             const catalogExID = transactionObj.CatalogExternalID;
                                             const tsaVisitData = !!transactionObj.TSAVisitData ? transactionObj.TSAVisitData : '';
+                                            const stepVisitData = !!step.additionalVisitData ? step.additionalVisitData : '';
                                             if (catalogExID == step.catalogToUse &&
-                                                tsaVisitData == step.additionalVisitData) {
+                                                tsaVisitData == stepVisitData) {
                                                 res = true;
                                             }
                                         }
@@ -502,8 +514,9 @@ export async function onVisitLoadScript(data: any) {
                                     });
 
                                     step.BaseActivities = stepTransactions.map(obj => obj!.UUID);
+                                    //await client.alert("****** BaseActivities ******", JSON.stringify(step.BaseActivities));
                                     step.Completed = stepTransactions.find(obj => step.CompletedStatusName.some(e => e === obj?.StatusName)) != undefined;
-                                    step.Disabled = step.allowedCount ? stepTransactions.length >= step.allowedCount : step.Completed;
+                                    step.Disabled = step.MaxCount ? stepTransactions.length >= step.MaxCount : false;
                                 }
                                 break;
                             }
@@ -525,7 +538,7 @@ export async function onVisitLoadScript(data: any) {
                                     }))
 
                                     step.Completed = surveyObjects.find(obj => step.CompletedStatusName.some(e => e === obj?.StatusName)) != undefined;
-                                    step.Disabled = step.allowedCount ? surveyObjects.length >= step.allowedCount : step.Completed;
+                                    step.Disabled = step.MaxCount ? surveyObjects.length >= step.MaxCount : false;
                                 }
                                 break;
                             }
@@ -541,7 +554,7 @@ export async function onVisitLoadScript(data: any) {
     // includes the End activity step
     async function markDisabled(visits: Visit[]) {
         for (let visit of visits) {
-            let inProgress = visit.Groups[0]?.Steps[0].BaseActivities?.length > 0;
+            let inProgress = visit.Groups[0]?.Steps[0]?.BaseActivities?.length > 0;
             if (inProgress) {
                 let foundMandatory = false;
                 for (let group of visit.Groups) {
@@ -615,7 +628,7 @@ export async function onVisitLoadScript(data: any) {
 
 async function debug(message: string) {
     // if (DEBUG_ENABLED) {
-    ////await client.alert("debug", message);
+    //await client.alert("debug", message);
     console.log(message);
     // }
 }

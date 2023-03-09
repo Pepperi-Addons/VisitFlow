@@ -40,7 +40,7 @@ class VisitFlowService {
      * @param resourceName udc resource name
      * @returns in-progress visit object
      */
-    private async getInProgressVisitFlow(resourceName: string) {
+    public async getInProgressVisitFlow(resourceName: string) {
         let inProgressVisit: IInProgressVisit | null = null;
 
         try {
@@ -54,7 +54,6 @@ class VisitFlowService {
                 //console.log('start end activitiies found', res[1].objects?.length);
                 if (res[1].success && res[1].objects?.length) {
                     inProgressVisit = await this.getInProgressVisit(res[1].objects[0]);
-                    // TODO AVNER - start end activity exist & we have selected group
                 }
             }
 
@@ -371,12 +370,19 @@ class VisitFlowService {
         }
     }
 
-    public getStartEndActivitiesPromise() {
+    public async getStartEndActivitiesPromise() {
+        //@ts-ignore
+        const user: User = await pepperi.environment.user();
+
         return pepperi.api.activities.search({
             fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime', 'TSAFlowID','TSAVisitSelectedGroup'],
             filter: {
                 Operation: 'AND',
-                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                LeftNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
+                    , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+                },
                 RightNode: {
                     Operation: 'AND',
                     LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
@@ -417,7 +423,7 @@ class VisitFlowService {
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
                         filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: 100
+                        pageSize: -1
                     });
 
                     if (res?.success && res.objects?.length) {
@@ -438,7 +444,7 @@ class VisitFlowService {
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
                         filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: 100
+                        pageSize: -1
                     });
                     if (res?.success && res.objects?.length) {
                         const stepTransactions = res.objects.filter(transactionObj => {

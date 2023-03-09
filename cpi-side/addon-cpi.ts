@@ -16,7 +16,7 @@ import {
     VISIT_FLOWS_TABLE_NAME
 } from 'shared';
 import { UtilsService } from './utils.service';
-// import { onVisitLoadScript } from './ori-scripts';
+//import { onVisitLoadScript } from './ori-scripts';
 
 export async function load(configuration: any) {
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD as any, {}, async (data): Promise<any> => {
@@ -45,10 +45,6 @@ export async function load(configuration: any) {
                     ObjectType: data.ResourceName                    
                 }, data);
                 
-                // if (eventRes?.Data.Visits) {
-                //         visits = eventRes.Data.Visits;
-                // }
-
                 if (eventRes?.data?.Visits) {
                     visits = eventRes.data.Visits;
                 }
@@ -66,19 +62,24 @@ export async function load(configuration: any) {
                 // }
 
                 if (visits?.length) {
-                    if(visits.length === 1){
+                    
+                    if(visits.length === 1){ // && visits[0].Groups[0].Steps[0].Completed
                         try{
                             const _visitFlowService = new VisitFlowService(data.AccountUUID);
+                            // check if have in-progress visit
+                            const inProgressVisit = await _visitFlowService.getInProgressVisitFlow('VisitFlows');
                             const res: any = await _visitFlowService.getStartEndActivitiesPromise();
-                            if(res?.objects && res.objects?.length > 0){
-                                const activity = await pepperi.DataObject.Get('activities',res.objects[0].UUID);
-                                const selectedGroup = await activity?.getFieldValue('TSAVisitSelectedGroup');
-                                // check if this tsa exits and have a value
-                                if(selectedGroup){
-                                    //check if visit groups contain the selected group
-                                    //could be remove by user event
-                                    //if not found return undefined
-                                    visits[0]['SelectedGroup'] = visits[0].Groups.filter(group => group.Key == selectedGroup).length === 1 ? selectedGroup : undefined;
+                            if(inProgressVisit){
+                                if(res?.objects && res.objects?.length > 0){
+                                    const activity = await pepperi.DataObject.Get('activities',res.objects[0].UUID);
+                                    const selectedGroup = await activity?.getFieldValue('TSAVisitSelectedGroup');
+                                    // check if this tsa exits and have a value
+                                    if(selectedGroup){
+                                        //check if visit groups contain the selected group
+                                        //could be remove by user event
+                                        //if not found return undefined
+                                        visits[0]['SelectedGroup'] = visits[0].Groups.filter(group => group.Key == selectedGroup).length === 1 ? selectedGroup : undefined;
+                                    }
                                 }
                             }
                         }
