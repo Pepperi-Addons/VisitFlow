@@ -26,7 +26,7 @@ export class RelationsService {
     
     async upsetRelationAndScheme(install = true) {
         try {
-                await this.createSchemeTables();
+                await this.createSchemeTables(install);
                 await this.upsertUserEventsRelation();
                 await this.upsertBlockRelation('VisitFlow', true);
         } 
@@ -35,7 +35,7 @@ export class RelationsService {
         }
     }
 
-    private async createSchemeTables() {
+    private async createSchemeTables(install) {
         try {
             const flowService = new FlowService(this.client);              
             const type = await flowService.createATD();   
@@ -44,7 +44,9 @@ export class RelationsService {
                 await flowService.createTSAFields(type.TypeID);
                 await flowService.createSchemas();  
                 // remove this code ,after talking with Roi, he told me that we don't need to add UDCS here.      
-                await flowService.upsertUDCs();
+                if(install){
+                    await flowService.upsertUDCs();
+                }
             }    
         } catch (err: any) {
             throw new Error(err.message);
