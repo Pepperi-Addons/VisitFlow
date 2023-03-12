@@ -48,7 +48,7 @@ class VisitFlowService {
                 pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
-         
+
             if (res?.length === 2 && typeof(res[0]) != 'undefined') {
                 this._activeVisits = res[0].filter(obj => obj.Active == true );
                 //console.log('start end activitiies found', res[1].objects?.length);
@@ -423,7 +423,7 @@ class VisitFlowService {
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
                         filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: -1
+                        pageSize: 100
                     });
 
                     if (res?.success && res.objects?.length) {
@@ -444,7 +444,7 @@ class VisitFlowService {
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
                         filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: -1
+                        pageSize: 100
                     });
                     if (res?.success && res.objects?.length) {
                         const stepTransactions = res.objects.filter(transactionObj => {

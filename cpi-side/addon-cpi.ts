@@ -16,7 +16,7 @@ import {
     VISIT_FLOWS_TABLE_NAME
 } from 'shared';
 import { UtilsService } from './utils.service';
-//import { onVisitLoadScript } from './ori-scripts';
+// import { onVisitLoadScript } from './ori-scripts';
 
 export async function load(configuration: any) {
     pepperi.events.intercept(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_LOAD as any, {}, async (data): Promise<any> => {
@@ -36,7 +36,7 @@ export async function load(configuration: any) {
                     await data.client?.alert('Error', 'Visits were not defined');
                     return {};
                 }
-                
+
                 const eventRes: any = await pepperi.events.emit(USER_ACTION_ON_VISIT_FLOW_LOAD, {
                     Data: {           
                         AccountUUID: data.AccountUUID,             

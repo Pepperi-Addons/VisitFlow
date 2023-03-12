@@ -47,9 +47,9 @@ export interface ClickObject {
 
 export const DEBUG_ENABLED = true;
 export const VISIT_FLOW_MAIN_ACTIVITY = 'VF_VisitFlowMainActivity';
+export const VISIT_FLOW_AVAILABILIY_CHECK_NAME = 'Availability Check';
 
 export async function onVisitLoadScript(data: any) {
-
     //await client.alert("Yo", 'OnVisitFlowLoad');
     //await debug(JSON.stringify(data));
 
@@ -117,7 +117,7 @@ export async function onVisitLoadScript(data: any) {
                 await duplicateSteps(visits, profile);
 
                 //await client.alert('main', 'before filterByFrequency');
-                //filterByFrequency(visits, accountUUID);
+                await filterByFrequency(visits, accountUUID);
 
                 await filterBaseActivities(visits);
                 await markDisabled(visits);
@@ -282,7 +282,6 @@ export async function onVisitLoadScript(data: any) {
             hIndex: number,
             promise: any
         }[] = [];
-
         for (let i = 0; i < visits.length; i++) {
             for (let j = 0; j < visits[i].Groups.length; j++) {
                 for (let h = 0; h < visits[i].Groups[j].Steps.length; h++) {
@@ -293,7 +292,7 @@ export async function onVisitLoadScript(data: any) {
                         step.frequencyType && step.frequencyType != 'None' && step.frequencyType != '' &&
                         step.frequencyValue && step.frequencyValue > 0
                     ) {
-                        //await client.alert("Step", JSON.stringify(step));
+                        // await client.alert("Step", JSON.stringify(step));
                         const stepActivities: any = await getLastExecutedInstance(accountUUID, step);
 
                         if (stepActivities?.count >= step.frequencyValue) {
@@ -311,32 +310,8 @@ export async function onVisitLoadScript(data: any) {
 
         if (promiseList.length) {
             for (let i = 0; i < promiseList.length; i++) {
-                    //if (promiseList[i]?.objects?.length > 0 || promiseList[i]?.Objects?.length > 0) {
-                        //found similar resource in date range - remove item
-                        visits[promiseList[i].iIndex].Groups[promiseList[i].jIndex].Steps.splice(promiseList[i].hIndex, 1);
-                    //}
-                }
-
-
-
-            /*
-            const promises = promiseList.map(item => item.promise);
-            let res: any = [];
-            try {
-                res = await Promise.all(promises);
+                visits[promiseList[i].iIndex].Groups[promiseList[i].jIndex].Steps.splice(promiseList[i].hIndex, 1);
             }
-            catch (error) {
-                // error handle
-            }
-            if (res?.length === promises.length) {
-                for (let i = 0; i < res.length; i++) {
-                    if (res[i]?.objects?.length > 0 || res[i]?.Objects?.length > 0) {
-                        //found similar resource in date range - remove item
-                        visits[promiseList[i].iIndex].Groups[promiseList[i].jIndex].Steps.splice(promiseList[i].hIndex, 1);
-                    }
-                }
-            }
-            */
         }
     }
 
@@ -344,7 +319,6 @@ export async function onVisitLoadScript(data: any) {
      * retrive a promise of the last instance
      */
     async function getLastExecutedInstance(accountUUID: string, step: any) {
-
         const resource = step.Resource;
         const resourceCreationData = step.ResourceCreationData;
         const frequencyType = step.frequencyType;
@@ -370,16 +344,15 @@ export async function onVisitLoadScript(data: any) {
         };
 
         const sorting = [{ Field: 'CreationDateTime', Ascending: false }];
-        const fields = ['UUID', 'CreationDateTime', 'StatusName', 'TSAVisitData', 'CatalogExternalID'];
+        const fields = ['UUID', 'CreationDateTime', 'StatusName', 'CatalogExternalID'];
         switch (resource) {
             case 'activities':
                 res = await pepperi.api.activities.search({
                     fields: fields,
                     filter: filterObj,
                     sorting: sorting,
-                    pageSize: -1
+                    pageSize: 100
                 });
-
                 if (res?.success && res.objects?.length) {
                     res.objects = res.objects.filter(act => step.CompletedStatusName.includes(act.StatusName));
                     // update the count property after filtering
@@ -387,11 +360,16 @@ export async function onVisitLoadScript(data: any) {
                 }
                 break;
             case 'transactions':
+
+                if (step.ResourceCreationData === VISIT_FLOW_AVAILABILIY_CHECK_NAME) {
+                    fields.push('TSAVisitData');
+                }
+
                 res = await pepperi.api.transactions.search({
                     fields: fields,
                     filter: filterObj,
                     sorting: sorting,
-                    pageSize: -1
+                    pageSize: 100
                 });
 
                 if (res?.success && res.objects?.length) {
@@ -404,23 +382,27 @@ export async function onVisitLoadScript(data: any) {
                 }
                 break;
             default:
-                debugger;
+                const startTime = await getStartTime(frequencyType, frequencyValue);
                 res = await pepperi.resources.resource(resource).search({
                     Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                    Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUIDStr}' And CreationDateTime >= '${getStartTime(frequencyType, frequencyValue)}'`
+                    Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${accountUUID}' And CreationDateTime >= '${startTime}'`
 
                 });
+                // update the count
+                res.count = res?.Objects?.length || 0;
                 break;
         }
+        console.log(res);
         return res;
     }
 
     async function getStartTime(frequencyType, frequencyValue) {
-        let dt = new Date();
+        let dt = new Date()
+        dt.setUTCHours(0,0,0,0);
 
         switch (frequencyType) {
             case 'Month':
-                dt.setMonth(dt.getMonth() - frequencyValue);
+                dt.setDate(1);
                 break;
             case 'Week':
                 dt.setDate(dt.getDate() - (frequencyValue * 7));
@@ -487,7 +469,7 @@ export async function onVisitLoadScript(data: any) {
                                                 'StatusName'
                                             ];
                                             // if (step.ResourceCreationData === 'AvailabilityCheck') {
-                                            if (step.ResourceCreationData === 'Ori AVCheck') {
+                                            if (step.ResourceCreationData === VISIT_FLOW_AVAILABILIY_CHECK_NAME) {
                                                 fields.push('TSAVisitData');
                                             }
                                             transactionObj = {
