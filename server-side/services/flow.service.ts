@@ -14,6 +14,8 @@ import {
     USER_ACTION_ON_VISIT_FLOW_STEP_CLICK
 } from 'shared';
 
+const UDC_UUID = '122c0e9d-c240-4865-b446-f37ece866c22';
+
 export class FlowService {
     private _papiClient: PapiClient;
     private _client: Client;
@@ -56,7 +58,8 @@ export class FlowService {
             Fields: {
                 Name:
                 {
-                    Type: 'String'
+                    Type: 'String',
+                    Indexed: true
                 },
                 Description:
                 {
@@ -66,6 +69,9 @@ export class FlowService {
                 {
                     Type: 'Bool'
                 }
+            },
+            DataSourceData: {
+                IndexName: `${UDC_UUID}_data`
             }
         }
     }
@@ -81,18 +87,61 @@ export class FlowService {
             Fields: {
                 Title:
                 {
-                    Type: 'String'
+                    Type: 'String',
+                    Indexed: true
                 },
                 SortIndex:
                 {
                     Type: 'Integer'
                 }
+            },
+            DataSourceData: {
+                IndexName: `${UDC_UUID}_data`
             }
         }
     }
 
+    // private getStepsSchema(): AddonDataScheme {
+    //     return {
+    //         Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME,
+    //         Type: 'abstract',
+    //         AddonUUID: this._client.AddonUUID,
+    //         SyncData: {
+    //             Sync: true
+    //         },
+    //         Fields: {
+    //             Title:
+    //             {
+    //                 Type: 'String'
+    //             },
+    //             Group:
+    //             {
+    //                 Type: 'Resource',
+    //                 Resource: VISIT_FLOW_GROUPS_BASE_TABLE_NAME,
+    //                 AddonUUID: this._client.AddonUUID,
+    //             },
+    //             Resource:
+    //             {
+    //                 Type: 'String'
+    //             },
+    //             ResourceCreationData:
+    //             {
+    //                 Type: 'String'
+    //             },
+    //             Mandatory:
+    //             {
+    //                 Type: 'Bool'
+    //             },
+    //             Completed:
+    //             {
+    //                 Type: 'String'
+    //             }
+    //         }
+    //     }
+    // }
+
     private getStepsSchema(): AddonDataScheme {
-        return {
+        const scheme: AddonDataScheme = {
             Name: VISIT_FLOW_STEPS_BASE_TABLE_NAME,
             Type: 'abstract',
             AddonUUID: this._client.AddonUUID,
@@ -102,7 +151,8 @@ export class FlowService {
             Fields: {
                 Title:
                 {
-                    Type: 'String'
+                    Type: 'String',
+                    Indexed: true
                 },
                 Group:
                 {
@@ -120,14 +170,27 @@ export class FlowService {
                 },
                 Mandatory:
                 {
-                    Type: 'Bool'
+                    Type: 'Bool' 
                 },
                 Completed:
                 {
-                    Type: 'String'
+                    Type: 'Array',
+                    Items: {
+                        Type: 'String'
+                    }
+                },
+                MaxCount:
+                {
+                    Type: 'Integer'
                 }
+            },
+            DataSourceData: {
+                IndexName: `${UDC_UUID}_data`
             }
         }
+            scheme.Fields!['Completed']['OptionalValues'] = ['In Creation','Submitted','In Progress','On Hold','Cancelled','Need Revision','Closed','Failed','Need Approval','ERP','Invoice','Need Online Approval','In Planning','Published','In Payment','Need Payment'];
+            scheme.Fields!['Resource']['OptionalValues'] = ['transactions','activities','MySurveys'];
+        return scheme;
     }
 
     async upsertUDCs() {
@@ -294,9 +357,13 @@ export class FlowService {
                         Hidden: false
                     }
                     await this._papiClient.post('/meta_data/activities/types', currentItem);
-                    return null;
-                } else {
-                    return null;
+                    //return null;
+                } 
+
+                return {
+                    TypeID:  startEndActivities[0].InternalID,
+                    InternalID: startEndActivities[0].InternalID,
+                    Hidden: false
                 }
             } else {
                 const url = `/meta_data/activities/types`;

@@ -5,46 +5,70 @@ import {
     VISIT_FLOWS_BASE_TABLE_NAME,
     VISIT_FLOW_GROUPS_BASE_TABLE_NAME
  } from 'shared'; 
- //import { UtilsService } from 'shared/services/utils.service';
+ // import { UtilsService } from 'shared/services/utils.service';
 
 export async function visit_flows(client: Client, request: Request) {
-    const service = new VisitFlowApiService(client, request);
-    const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);  
-    //const utilsService = new UtilsService(request);
-    const findOptions = service.buildFinOptionsQuery();      
-    resource.getResources(findOptions);
+    try {
+        const service = new VisitFlowApiService(client, request);
+        const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);  
+        //const utilsService = new UtilsService(request);
+        const findOptions = service.buildFinOptionsQuery();      
+        return resource.getResources(findOptions);
+    } catch(err) {
+        throw err;
+    }
 }
 
 export async function get_visit_flows_by_key(client: Client, request: Request) {
-    const service = new VisitFlowApiService(client, request);
-    const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);
-    resource.getResourceByKey(request.query.key);
+    try{
+        const service = new VisitFlowApiService(client, request);
+        const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);
+        return resource.getResourceByKey(request.query.key);
+    } catch(err) {
+        throw err;
+    }
 }
 
 export async function visit_flows_search(client: Client, request: Request) {
-    const service = new VisitFlowApiService(client, request);
-    const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);
-    resource.searchResources(request.body);
+    try {
+        const service = new VisitFlowApiService(client, request);
+        const resource = service.getResourceService(VISIT_FLOWS_BASE_TABLE_NAME);
+        return resource.searchResources(request.body);
+    } catch(err) {
+        throw err;
+    }
 }
 
 export async function visit_flows_groups(client: Client, request: Request) {
-    const service = new VisitFlowApiService(client, request);
-    const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
-    //const utilsService = new UtilsService(request);
-    const findOptions = service.buildFinOptionsQuery();  
-    resource.getResources(findOptions);
+    try{
+        const service = new VisitFlowApiService(client, request);
+        const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);    
+        //const utilsService = new UtilsService(request);
+        const findOptions = service.buildFinOptionsQuery();  
+        return resource.getResources(findOptions);
+    } catch(err) {
+        throw err;
+    }
 }
 
 export async function get_visit_flow_groups_by_key(client: Client, request: Request) {
-    const service = new VisitFlowApiService(client, request);
-    const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
-    resource.getResourceByKey(request.query.key);
+    try {
+        const service = new VisitFlowApiService(client, request);
+        const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
+        return resource.getResourceByKey(request.query.key);
+    } catch(err) {
+        throw err;
+    }
 }
 
 export async function visit_flow_groups_search(client: Client, request: Request) {
-    const service = new VisitFlowApiService(client, request);
-    const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
-    resource.searchResources(request.body);
+    try{
+        const service = new VisitFlowApiService(client, request);
+        const resource = service.getResourceService(VISIT_FLOW_GROUPS_BASE_TABLE_NAME);
+        return resource.searchResources(request.body);
+    } catch(err) {
+        throw err;
+    }
 }
 
 export async function visit_flow_user_events(client:Client, request: Request): Promise<any> {

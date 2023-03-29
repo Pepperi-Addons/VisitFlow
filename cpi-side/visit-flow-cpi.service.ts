@@ -1,11 +1,13 @@
 import { IClient } from '@pepperi-addons/cpi-node/build/cpi-side/events';
 import { activityType2ResourceType } from '@pepperi-addons/cpi-node/build/cpi-side/wrappers';
+
 import {
     IVisitFlow,
     VISIT_FLOW_GROUPS_TABLE_NAME,
     VISIT_FLOW_MAIN_ACTIVITY
 } from 'shared';
 import _ from 'lodash';
+import { User } from '@pepperi-addons/cpi-node';
 
 
 interface IInProgressVisit {
@@ -38,7 +40,7 @@ class VisitFlowService {
      * @param resourceName udc resource name
      * @returns in-progress visit object
      */
-    private async getInProgressVisitFlow(resourceName: string) {
+    public async getInProgressVisitFlow(resourceName: string) {
         let inProgressVisit: IInProgressVisit | null = null;
 
         try {
@@ -46,9 +48,9 @@ class VisitFlowService {
                 pepperi.resources.resource(resourceName).get({ where: 'Active = true' }),
                 this.getStartEndActivitiesPromise()
             ]);
-            debugger;
-            if (res?.length === 2 && res[0].length) {
-                this._activeVisits = res[0];
+
+            if (res?.length === 2 && typeof(res[0]) != 'undefined') {
+                this._activeVisits = res[0].filter(obj => obj.Active == true );
                 //console.log('start end activitiies found', res[1].objects?.length);
                 if (res[1].success && res[1].objects?.length) {
                     inProgressVisit = await this.getInProgressVisit(res[1].objects[0]);
@@ -94,19 +96,15 @@ class VisitFlowService {
     async createVisitFlows(inProgressVisit: IInProgressVisit | null = null) {
         let visitFlows: IVisitFlow[] = [];
         let udcVisits;
-
         try {
-            debugger;
             if (inProgressVisit) {
                 udcVisits = [this._activeVisits[inProgressVisit.ActiveVisitIndex]];
             } else {
-                udcVisits = this._activeVisits;
+                    udcVisits = this._activeVisits;
             }
-            debugger;
+            udcVisits = this.filterUnActiveSurvey(udcVisits);
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
-            //debugger;
             //visitFlows = await this.convertToVisitFlows(udcVisits);
-           // debugger;
 
            // return visitFlows;
         } catch (err: any) {
@@ -114,9 +112,61 @@ class VisitFlowService {
         }
     }
 
+    private filterUnActiveSurvey(udcVisits){
+        for (const visit of udcVisits) {
+            // check if current visit is Active
+            if(visit.Active){
+                // run on all visit steps & look for survey
+                //const surveys = visit.steps.filter(step => step.Resource == 'MySurveys');
+                
+                visit.steps.forEach(async (step,index) => {
+                    if(step.Resource == 'MySurveys'){
+                        // get survey template by key and check if active and in date range
+                        const surveyTtemplate = await this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
+                        if(!this.isActiveSurvey(surveyTtemplate)){
+                            // remove this survey from steps list
+                            visit.steps.splice(index,1);
+                        }
+                    }
+                });
+            }
+        }
+        return udcVisits;
+    }
+
+    async getSurvey(resource: string, key: string) {
+        let res: any = await pepperi.resources.resource(resource).search({
+            Fields: ['Key','Active', 'ActiveDateRange'],
+            Where: `Key='${key}'`
+        });
+
+        return res.Objects[0] || {} as any;
+    }
+
+    isActiveSurvey(survey){
+        if(survey?.Active){
+            // check if has active range & today on range
+            if(survey.ActiveDateRange){
+
+                const dateFrom = new Date(survey.ActiveDateRange.From).getTime();
+                const dateTo = new Date(survey.ActiveDateRange.To).getTime();
+                const today = new Date().getTime();
+                // check if today date in active date range
+                return dateFrom < today && dateTo > today;
+            }
+            else{
+                return true;
+            }
+        }
+        else{
+            return false;
+        }
+    }
+
     private async convertToVisitGroups(visits: any[], inProgress: IInProgressVisit | null) {
         let udcGroups: any[] = [];
         let groupedVisits: any[] = [];
+
         let res: any = await pepperi.resources.resource(VISIT_FLOW_GROUPS_TABLE_NAME).search({
             Fields: ['Key', 'Title', 'SortIndex']
         });
@@ -142,19 +192,41 @@ class VisitFlowService {
             //            
             let starterFound = false;
             let mandatoryIncompleteFound = false;
+            
             for (let i = 0; i < steps.length; i++) {
                 //let step: any = _.clone(steps[i]);
+                steps[i].CompletedStatusName =  steps[i].Completed;
                 if (inProgress) {
                     //TODO if startActivity incomplete disable all but set the item in BaseActivities
-                    const item = await this.getResourceItem(
+                    // const item = await this.getResourceItem(
+                    //     steps[i].Resource,
+                    //     steps[i].ResourceCreationData,
+                    //     inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
+                    // );
+                    // steps[i].BaseActivities = item ? [item.UUID] : [];
+                    const items = await this.getResourceItems(
                         steps[i].Resource,
                         steps[i].ResourceCreationData,
                         inProgress.CreationDateTime ? inProgress.CreationDateTime : ''
                     );
-                    steps[i].BaseActivities = item ? [item.UUID] : [];
+
+                    steps[i].BaseActivities = items.map(item =>  item?.UUID );
+                    
                     steps[i].Completed = this.isStepCompleted(
-                        item,
+                        items[0],
                         steps[i].Completed);
+                    
+                    /*
+                    If a step is completed it should be disabled only if: 
+                            The count of the ‘baseActivities’ is equal to the value of step allowedCount.
+                            In case maxCount is 0 or empty, it should be considered as 
+                            unlimited so the step should not be disabled.
+                    */
+                    if(steps[i].Completed && steps[i].MaxCount != undefined && steps[i].MaxCount != 0 && steps[i].MaxCount != ''){
+                        if(steps[i].BaseActivities.length >= steps[i].MaxCount){
+                            steps[i].Disabled = true;
+                        }
+                    }
                     //in case of an imcomplete mandatory activity - lock End activity
                     if (
                         steps[i].Mandatory &&
@@ -177,7 +249,6 @@ class VisitFlowService {
                 }
 
             }
-            //debugger;
             if (mandatoryIncompleteFound) {
                 this.lockEndActivity(steps);
             }
@@ -193,14 +264,17 @@ class VisitFlowService {
                 })
                 .value();
 
+                /*
             groupedVisits.push({
                 Key: visit.Key,
-                Title: visit.Description,
+                Title: visit.Name, //change from description to name for DI-22805
                 Groups: groups
             });
+            */
+           visit.Groups = groups;
+           visit.Title = visit.Name;
         }
-
-        return groupedVisits;
+        return visits;//groupedVisits;
     }
 
     /**
@@ -228,7 +302,6 @@ class VisitFlowService {
             let res: any = await pepperi.resources.resource(VISIT_FLOW_GROUPS_TABLE_NAME).search({
                 Fields: ['Key', 'Title', 'SortIndex']
             });
-            //debugger;
 
             if (res?.Objects?.length) {
                 udcGroups = res.Objects;
@@ -245,7 +318,6 @@ class VisitFlowService {
                         }
                     })
                     .value();
-                //debugger;
                 //in case VISIT_FLOW_GROUPS_TABLE_NAME is defined - use it to sort the groups
                 if (udcGroups?.length) {
                     const sortedGroups = groups.sort((a, b) => {
@@ -259,7 +331,6 @@ class VisitFlowService {
                     });
                     groups = sortedGroups;
                 }
-                //debugger;
                 visits.push({
                     Key: visit.Key,
                     Title: visit.Description,
@@ -269,7 +340,6 @@ class VisitFlowService {
 
             return visits;
         } catch (err: any) {
-            debugger;
             throw new Error(err.message);
         }
     } */
@@ -279,15 +349,18 @@ class VisitFlowService {
         return item ? item.Title : 'N/A';
     }
 
-    private isStepCompleted(item: any, completedStatus: string) {
+    private isStepCompleted(item: any, completedStatus: any) {
         try {
-            //debugger;
-            if (item) {
-                if (item && item.StatusName === completedStatus) {
-                    return true;
-                } else {
-                    return false;
+            if (item?.StatusName && completedStatus) {
+                if(typeof completedStatus == 'string'){
+                    // for the old scheme completed status name
+                    return item?.StatusName === completedStatus;
                 }
+                else{
+                    // for the new multi select completed status names
+                    return completedStatus.includes(item.StatusName);  
+                }
+                    
             } else {
                 return false;
             }
@@ -297,12 +370,19 @@ class VisitFlowService {
         }
     }
 
-    private getStartEndActivitiesPromise() {
+    public async getStartEndActivitiesPromise() {
+        //@ts-ignore
+        const user: User = await pepperi.environment.user();
+
         return pepperi.api.activities.search({
-            fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime', 'TSAFlowID'],
+            fields: ['UUID', 'Type', 'StatusName', 'CreationDateTime', 'TSAFlowID','TSAVisitSelectedGroup'],
             filter: {
                 Operation: 'AND',
-                LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
+                LeftNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
+                    , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+                },
                 RightNode: {
                     Operation: 'AND',
                     LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
@@ -312,80 +392,82 @@ class VisitFlowService {
             sorting: [{ Field: 'CreationDateTime', Ascending: false }],
             pageSize: 1
         });
-
     }
 
-    private async getResourceItem(resource: string, resourceCreationData: string, creationDateTime: string) {
+    private async getResourceItems(resource: string, resourceCreationData: string, creationDateTime: string) {
         try {
             let startDateTime = creationDateTime ? creationDateTime : this.getToday();
             let item: any | null = null;
             let res: any;
+            let items: any[] = [];
+            //@ts-ignore
+            const user: User = await pepperi.environment.user();
+            
+            const filterObj: any = {
+                Operation: 'AND',
+                LeftNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
+                    , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
+                },
+                RightNode: {
+                    Operation: 'AND',
+                    LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
+                    , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
+                }
+            }
 
             switch (resource) {
                 case 'activities':
                     res = await pepperi.api.activities.search({
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
-                        filter: {
-                            Operation: 'AND',
-                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
-                            RightNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-                            }
-                        },
+                        filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: 1
+                        pageSize: 100
                     });
-                    //debugger;
+
                     if (res?.success && res.objects?.length) {
-                        if (creationDateTime) {
-                            if (res.objects[0].CreationDateTime >= creationDateTime) {
-                                item = res.objects[0];
+                        const stepActivities = res.objects.filter(activityObj => {
+                            let res = false;
+                            if (activityObj) {
+                                if (activityObj.CreationDateTime >= startDateTime) {
+                                    res = true;
+                                }
                             }
-                        } else {
-                            item = res.objects[0];
-                        }
+                            return res;
+                        });
+                        items = stepActivities;
                     }
                     break;
                 case 'transactions':
                     res = await pepperi.api.transactions.search({
                         fields: ['UUID', 'StatusName', 'CreationDateTime'],
-                        filter: {
-                            Operation: 'AND',
-                            LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] },
-                            RightNode: {
-                                Operation: 'AND',
-                                LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-                                , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-                            }
-                        },
+                        filter: filterObj,
                         sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                        pageSize: 1
+                        pageSize: 100
                     });
                     if (res?.success && res.objects?.length) {
-                        if (creationDateTime) {
-                            if (res.objects[0].CreationDateTime >= creationDateTime) {
-                                item = res.objects[0];
+                        const stepTransactions = res.objects.filter(transactionObj => {
+                            let res = false;
+                            if (transactionObj) {
+                                if (transactionObj.CreationDateTime >= startDateTime) {
+                                    res = true;
+                                }
                             }
-                        } else {
-                            item = res.objects[0];
-                        }
+                            return res;
+                        });
+                        items = stepTransactions;
                     }
                     break;
                 default:
                     res = await pepperi.resources.resource(resource).search({
                         Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                        Where: `Template='${resourceCreationData}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
+                        Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
 
                     });
-                    debugger;
+                    
                     if (res?.Objects?.length) {
-                        debugger;
-
-                        //let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime);
-                        let templates: any[] = res.Objects;
-                        debugger;
+                        let templates: any[] = res.Objects.filter(template => template.CreationDateTime >= startDateTime); 
                         if (templates.length) {
                             templates.sort((a, b) => {
                                 if (a.CreationDateTime > b.CreationDateTime) {
@@ -398,29 +480,18 @@ class VisitFlowService {
                             })
                             item = {
                                 UUID: templates[0].Key,
-                                StatusName: templates[0].Status || ''
+                                StatusName: templates[0].StatusName || ''
                             }
+
+                            items = templates.map(obj=> ({UUID: obj.Key, StatusName: obj.StatusName || ''}));;
+
                         }
                     }
                     break;
             }
-            // debugger;
-            /*if (res?.success === true && res.objects.length) {
-                //search for completed status in all resources
-                item = res.objects[0];
-                if (completedStatus) {
-                    for (let resource of res.objects) {
-                        if (resource.StatusName === completedStatus) {
-                            item = resource;
-                            break;
-                        }
-                    }
-                }
-            } */
-
-            return item;
+            
+            return items;
         } catch (err: any) {
-            debugger;
             throw new Error(err.message);
             //return null;
         }
@@ -444,12 +515,11 @@ class VisitFlowService {
             let url = '/activities/details/';
             let activity: any = null;
 
-            debugger;
-            if (step?.BaseActivities?.length) {
+            // if (step?.BaseActivities?.length) {
+            if (step?.BaseActivities?.length && step.BaseActivities[0] !== null) {
                 url += step.BaseActivities[0];
                 //await data.client?.alert('found activit, url - ', url);
             } else {
-                debugger;
                 //await data.client?.alert('creating new activity', this._accountUUID);
                 const res: any = await pepperi.app.activities.add({
                     type: {
@@ -464,7 +534,7 @@ class VisitFlowService {
                         TSAFlowID: visitUUID
                     }
                 });
-                debugger;
+
                 if (res && res.success === true && res.id) {
                     //await data.client?.alert('after creating activity success', '');
                     url += res.id;
@@ -477,7 +547,6 @@ class VisitFlowService {
             return url;
 
         } catch (err: any) {
-            debugger;
             //if (err?.message) {
             //await data.client?.alert('caught exc', err?.message);
             throw new Error(err.message);
@@ -494,9 +563,9 @@ class VisitFlowService {
 
         try {
             // = await this.getResourceItem(Resource, ResourceCreationData, creationDateTime);            
-            debugger;
-            if (step?.BaseActivities?.length) {
-                return url + step.BaseActivities;
+            // if (step?.BaseActivities?.length) {
+            if (step?.BaseActivities?.length && step.BaseActivities[0] !== null) {
+                return url + step.BaseActivities[0];
             } else {
                 if (step.Resource === 'transactions') {
                     catalogName = await this.chooseCatalog(client);
@@ -505,15 +574,18 @@ class VisitFlowService {
                         throw new Error('Catalog was not selected');
                     } */
                 }
-                debugger;
-                const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
-                debugger;
-                if (newResource?.id) {
-                    return url + newResource.id;
-                } else {
-                    throw new Error(`Resource ${step.ResourceCreationData} was not created`);
-                }
 
+                if (step.Resource === 'transactions' && catalogName !== '' || step.Resource !== 'transactions') {
+                    const newResource = await this.createResource(step.Resource, step.ResourceCreationData, catalogName);
+    
+                    if (newResource?.id) {
+                        return url + newResource.id;
+                    } else {
+                        throw new Error(`Resource ${step.ResourceCreationData} was not created`);
+                    }
+                } else {
+                    return '';
+                }
             }
         } catch (err: any) {
             //await client?.alert('outer choose catalog exc', err?.message);
@@ -579,9 +651,10 @@ class VisitFlowService {
                             catalogName = catalog.ExternalID;
                             //await client?.alert('finding catalog name', catalogName);     
                         }
+                    } else {
+                        await client?.alert('Choose catalog','Catalog was not selected');
+                        //throw new Error('Catalog was not selected');
                     }
-                } else {
-                    throw new Error('Catalog was not selected');
                 }
             }
 
@@ -629,13 +702,14 @@ class VisitFlowService {
                     break;
                 }
                 default:
+                    //@ts-ignore
+                    const user: User = await pepperi.environment.user();
                     const newSurvey = await pepperi.resources.resource(resource).post({
-                        Creator: '00000000-0000-0000-0000-000000000000', //TEMP
+                        Creator: user.uuid, //'00000000-0000-0000-0000-000000000000', //TEMP
                         Template: resourceCreationData,//templateKey
                         Account: this._accountUUID,
                         StatusName: 'InCreation' //TEMP
                     });
-                    debugger;
                     if (newSurvey?.Key) {
                         item = {
                             id: newSurvey.Key
@@ -644,12 +718,9 @@ class VisitFlowService {
                     break;
             }
         } catch (err: any) {
-            debugger;
             throw new Error(err.message);
         }
 
-
-        debugger;
         return item;
     }
 

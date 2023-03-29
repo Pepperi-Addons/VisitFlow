@@ -17,7 +17,7 @@ import { FlowService } from './services/flow.service';
 export async function install(client: Client, request: Request): Promise<any> {
     try {
         const relationService = new RelationsService(client);
-        await relationService.upsetRelationAndScheme();        
+        await relationService.upsetRelationAndScheme(true);        
 
     } catch (err: any) {
         throw new Error(`Failed to install addon. error - ${err.message}`);

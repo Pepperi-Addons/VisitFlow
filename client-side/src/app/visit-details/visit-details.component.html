@@ -17,7 +17,7 @@
     <div class="group-steps">
         <ng-container *ngIf="selectedGroupIndex >= 0">
             <pep-button *ngFor="let step of groups[selectedGroupIndex].Steps; let i = index" class="visit-item activity" [value]="step.Title"
-                styleType="regular" sizeType="md" [disabled]="step.Completed || step.Disabled"
+                styleType="regular" sizeType="md" [disabled]="step.Disabled"
                 [iconName]="step | stepStatusIcon" iconPosition="start" (buttonClick)="onStepClicked(i)">
             </pep-button>
 

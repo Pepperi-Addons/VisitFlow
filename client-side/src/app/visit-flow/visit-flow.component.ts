@@ -1,9 +1,9 @@
 import { TranslateService } from '@ngx-translate/core';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { VisitFlowService } from './visit-flow.service';
+
 import { of } from 'rxjs';
 import { PepLayoutService, PepScreenSizeType } from '@pepperi-addons/ngx-lib';
-
 
 @Component({
     selector: 'page-visit-flow',
@@ -15,8 +15,12 @@ export class VisitFlowComponent implements OnInit {
     @Input()
     set hostObject(value: any) {
         console.log('hostObject', value);
-        if (value?.pageParameters?.AccountUUID) {
-            this._visitFlowService.accountUUID = value.pageParameters.AccountUUID;;
+
+        if (value?.pageParameters){
+
+            if (value.pageParameters.AccountUUID) {
+                this._visitFlowService.accountUUID = value.pageParameters.AccountUUID;;
+            }
         }
         let resourceName = '';
         if (value?.configuration?.resourceName) {
