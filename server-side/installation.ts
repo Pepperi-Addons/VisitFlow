@@ -5,7 +5,7 @@ The return object format MUST contain the field 'success':
 
 If the result of your code is 'false' then return:
 {success:false, errorMessage:{the reason why it is false}}
-The error Message is important! it will be written in the audit log and help the user to understand what happen
+The error Message is important! it will be written in the audit log and help the user to understand what happen.
 */
 
 import { Client, Request } from '@pepperi-addons/debug-server';
