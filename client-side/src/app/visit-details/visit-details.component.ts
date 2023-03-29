@@ -65,7 +65,7 @@ export class VisitDetailsComponent implements OnInit {
         };
         this._visitDetailsService.onStepClicked(selectedStep);                        
     }
-
+    // new comment for publish check
     onReturnToVisitListClicked() {
         this._visitFlowService.selectedVisit = null;
     }    
