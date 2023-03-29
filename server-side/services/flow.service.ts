@@ -14,6 +14,8 @@ import {
     USER_ACTION_ON_VISIT_FLOW_STEP_CLICK
 } from 'shared';
 
+const UDC_UUID = '122c0e9d-c240-4865-b446-f37ece866c22';
+
 export class FlowService {
     private _papiClient: PapiClient;
     private _client: Client;
@@ -56,7 +58,8 @@ export class FlowService {
             Fields: {
                 Name:
                 {
-                    Type: 'String'
+                    Type: 'String',
+                    Indexed: true
                 },
                 Description:
                 {
@@ -66,6 +69,9 @@ export class FlowService {
                 {
                     Type: 'Bool'
                 }
+            },
+            DataSourceData: {
+                IndexName: `${UDC_UUID}_data`
             }
         }
     }
@@ -81,12 +87,16 @@ export class FlowService {
             Fields: {
                 Title:
                 {
-                    Type: 'String'
+                    Type: 'String',
+                    Indexed: true
                 },
                 SortIndex:
                 {
                     Type: 'Integer'
                 }
+            },
+            DataSourceData: {
+                IndexName: `${UDC_UUID}_data`
             }
         }
     }
@@ -141,7 +151,8 @@ export class FlowService {
             Fields: {
                 Title:
                 {
-                    Type: 'String'
+                    Type: 'String',
+                    Indexed: true
                 },
                 Group:
                 {
@@ -172,6 +183,9 @@ export class FlowService {
                 {
                     Type: 'Integer'
                 }
+            },
+            DataSourceData: {
+                IndexName: `${UDC_UUID}_data`
             }
         }
             scheme.Fields!['Completed']['OptionalValues'] = ['In Creation','Submitted','In Progress','On Hold','Cancelled','Need Revision','Closed','Failed','Need Approval','ERP','Invoice','Need Online Approval','In Planning','Published','In Payment','Need Payment'];
