@@ -413,4 +413,16 @@ export class FlowService {
         return events;
     }
 
+    /***********************************************************************************************/
+    //                              Journey functions
+    /************************************************************************************************/
+    
+    // TODO: Add Journey code when needed.
+    // async getVisitFlowOptionalValues(query: any): Promise<{Key: string, Value: any}[]> {
+    //     let res: {Key: string, Value: any}[] = [];
+    //     // TODO: Implement this.
+
+    //     return res;
+    // }
+    
 }

@@ -3,13 +3,17 @@ import { Client } from '@pepperi-addons/debug-server';
 import { FlowService } from './flow.service';
 import { 
     VISIT_FLOWS_TABLE_NAME,
-    VISIT_FLOWS_BASE_TABLE_NAME 
+    VISIT_FLOWS_BASE_TABLE_NAME, 
+    CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK
 } from 'shared';
+
+export const JOURNEY_EVENTS_RELATION_NAME = 'JourneyEvent'
 
 export class RelationsService {
     //private _client: Client;
     private _papiClient: PapiClient
     bundleFileName = '';
+    addonUUID: string;
 
     constructor(private client: Client) {
         //this._client = client;
@@ -21,14 +25,40 @@ export class RelationsService {
             actionUUID: client.ActionUUID
         });
         
+        this.addonUUID = client.AddonUUID;
         this.bundleFileName = `file_${this.client.AddonUUID}`;
     }
-    
+
+    // TODO: Add Journey code when needed.
+    // private async upsertEventsRelation(eventName, displayEventName, fields) {
+    //     const relation = {
+    //         Type: "AddonAPI",
+    //         AddonUUID: this.addonUUID,
+    //         DisplayEventName: displayEventName,
+    //         RelationName: JOURNEY_EVENTS_RELATION_NAME,
+    //         Name: eventName,
+    //         Description: "",
+    //         AddonRelativeURL: `/event_filters/get_filter_by_event?event=${eventName}`,
+    //         Fields: fields,
+    //     };
+
+    //     await this.upsertRelation(relation);
+    // }
+
+    // TODO: Add Journey code when needed.
+    // private async upsertJourneyEventsRelation() {
+    //     const promises = [
+    //         this.upsertEventsRelation(CLIENT_ACTION_ON_CLIENT_VISIT_FLOW_STEP_CLICK, "Visit flow step click", [{"FieldID": "Visits.Key"}, {"FieldID": "SelectedStep.GroupIndex"}, {"FieldID": "SelectedStep.StepIndex"}]),
+    //     ];
+    //     Promise.all(promises);
+    // }
+
     async upsetRelationAndScheme(install = true) {
         try {
-                await this.createSchemeTables(install);
-                await this.upsertUserEventsRelation();
-                await this.upsertBlockRelation('VisitFlow', true);
+            await this.createSchemeTables(install);
+            await this.upsertUserEventsRelation();
+            await this.upsertBlockRelation('VisitFlow', true);
+            // await this.upsertJourneyEventsRelation();
         } 
         catch (err: any) {
             throw new Error(err.message);
