@@ -102,7 +102,7 @@ class VisitFlowService {
             } else {
                     udcVisits = this._activeVisits;
             }
-            udcVisits = this.filterUnActiveSurvey(udcVisits);
+            udcVisits = await Promise.all([this.filterUnActiveSurvey(udcVisits)]);
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
             //visitFlows = await this.convertToVisitFlows(udcVisits);
 
