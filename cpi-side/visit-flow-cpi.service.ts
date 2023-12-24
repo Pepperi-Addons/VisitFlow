@@ -118,9 +118,9 @@ class VisitFlowService {
             if(visit.Active && visit.steps){
                 // run on all visit steps & look for survey
                 //const surveys = visit.steps.filter(step => step.Resource == 'MySurveys');
-                for(let index = visit.steps.length; index > 0 ; index--){
+                for(let index = visit.steps.length-1; index >= 0 ; index--){
                 //visit.steps.forEach(async (step,index) => {
-                    const step = visit.steps[index -1];
+                    const step = visit.steps[index];
                     if(step.Resource == 'MySurveys'){
                         // get survey template by key and check if active and in date range
                         const surveyTtemplate = this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
