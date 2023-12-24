@@ -102,7 +102,7 @@ class VisitFlowService {
             } else {
                     udcVisits = this._activeVisits;
             }
-            udcVisits = this.filterUnActiveSurvey(udcVisits);
+            udcVisits = await Promise.all([this.filterUnActiveSurvey(udcVisits)]);
             return this.convertToVisitGroups(udcVisits, inProgressVisit);
             //visitFlows = await this.convertToVisitFlows(udcVisits);
 
@@ -112,23 +112,24 @@ class VisitFlowService {
         }
     }
 
-    private filterUnActiveSurvey(udcVisits){
+     private  filterUnActiveSurvey(udcVisits){
         for (const visit of udcVisits) {
             // check if current visit is Active
-            if(visit.Active){
+            if(visit.Active && visit.steps){
                 // run on all visit steps & look for survey
                 //const surveys = visit.steps.filter(step => step.Resource == 'MySurveys');
-                
-                visit.steps.forEach(async (step,index) => {
+                for(let index = visit.steps.length; index > 0 ; index--){
+                //visit.steps.forEach(async (step,index) => {
+                    const step = visit.steps[index -1];
                     if(step.Resource == 'MySurveys'){
                         // get survey template by key and check if active and in date range
-                        const surveyTtemplate = await this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
+                        const surveyTtemplate = this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
                         if(!this.isActiveSurvey(surveyTtemplate)){
                             // remove this survey from steps list
                             visit.steps.splice(index,1);
                         }
                     }
-                });
+                };
             }
         }
         return udcVisits;
@@ -152,7 +153,7 @@ class VisitFlowService {
                 const dateTo = new Date(survey.ActiveDateRange.To).getTime();
                 const today = new Date().getTime();
                 // check if today date in active date range
-                return dateFrom < today && dateTo > today;
+                return dateFrom <= today && dateTo >= today;
             }
             else{
                 return true;
