@@ -1,6 +1,6 @@
 {
   "AddonUUID": "2b462e9e-16b5-4e7a-b1e6-9e2bfb61db7e",
-  "AddonVersion": "0.6.38",
+  "AddonVersion": "0.6.41",
   "DebugPort": 4500,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -28,36 +28,10 @@
       "slugs": "1.0.23",
       "user_events": "0.5.7",
       "scripts": "0.6.3",
-      "sync": "0.2.58",
-      "pepperi_pack": "1.1.2"
+      "sync": "0.2.58"
     },
     "CPISide": [
       "addon-cpi.ts"
     ]
-  },
-  "AddonPackage": {
-    "ClientZip": true,
-    "Dependencies": {
-      "@angular/animations": "14",
-      "@angular/cdk": "14",
-      "@angular/common": "14",
-      "@angular/core": "14",
-      "@angular/elements": "14",
-      "@angular/flex-layout": "14",
-      "@angular/forms": "14",
-      "@angular/material": "14",
-      "@angular/platform-browser": "14",
-      "@angular/router": "14",
-      "@mat-datetimepicker/core": "9",
-      "@ngx-translate/core": "14",
-      "hammerjs": "2",
-      "moment": "2",
-      "ng-gallery": "5",
-      "ng2-file-upload": "1",
-      "ngx-quill": "12",
-      "ngx-signaturepad": "0",
-      "ngx-virtual-scroller": "4",
-      "quill": "1"
-    }
   }
 }
