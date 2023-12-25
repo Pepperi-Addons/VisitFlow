@@ -112,7 +112,7 @@ class VisitFlowService {
         }
     }
 
-     private  filterUnActiveSurvey(udcVisits){
+     private  async filterUnActiveSurvey(udcVisits){
         for (const visit of udcVisits) {
             // check if current visit is Active
             if(visit.Active && visit.steps){
@@ -123,7 +123,7 @@ class VisitFlowService {
                     const step = visit.steps[index];
                     if(step.Resource == 'MySurveys'){
                         // get survey template by key and check if active and in date range
-                        const surveyTtemplate = this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
+                        const surveyTtemplate = await this.getSurvey('MySurveyTemplates',step.ResourceCreationData);
                         if(!this.isActiveSurvey(surveyTtemplate)){
                             // remove this survey from steps list
                             visit.steps.splice(index,1);
@@ -148,7 +148,6 @@ class VisitFlowService {
         if(survey?.Active){
             // check if has active range & today on range
             if(survey.ActiveDateRange){
-
                 const dateFrom = new Date(survey.ActiveDateRange.From).getTime();
                 const dateTo = new Date(survey.ActiveDateRange.To).getTime();
                 const today = new Date().getTime();
