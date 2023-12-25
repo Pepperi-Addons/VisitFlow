@@ -152,7 +152,15 @@ class VisitFlowService {
                 const dateTo = new Date(survey.ActiveDateRange.To).getTime();
                 const today = new Date().getTime();
                 // check if today date in active date range
-                return dateFrom <= today && dateTo >= today;
+                 if(!isNaN(dateFrom) && !isNaN(dateTo)){
+                     return dateFrom <= today && dateTo >= today;
+                 }
+                else if(!isNaN(dateTo) && isNaN(dateFrom)){
+                    return dateTo >= today;
+                }
+                else if(isNaN(dateTo) && !isNaN(dateFrom)){
+                    return dateFrom <= today;
+                }
             }
             else{
                 return true;
