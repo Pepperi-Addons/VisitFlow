@@ -445,38 +445,14 @@ class VisitFlowService {
             let item: any | null = null;
             let res: any;
             let items: any[] = [];
-            // remove the await call from the loop and get it from the main function
-            //@ts-ignore
-            //const user: User = await pepperi.environment.user();
-
-            // const filterObj: any = {
-            //     Operation: 'AND',
-            //     LeftNode: {
-            //         Operation: 'AND',
-            //         LeftNode: { ApiName: 'CreationDateTime', FieldType: 'DateTime', Operation: 'Today', Values: [] }
-            //         , RightNode: { ApiName: 'Creator.UUID', FieldType: 'String', Operation: 'IsEqual', Values: [user.uuid] }
-            //     },
-            //     RightNode: {
-            //         Operation: 'AND',
-            //         LeftNode: { ApiName: 'AccountUUID', FieldType: 'String', Operation: 'Contains', Values: [this._accountStr] }
-            //         , RightNode: { ApiName: 'Type', FieldType: 'String', Operation: 'Contains', Values: [resourceCreationData] }
-            //     }
-            // }
 
             switch (resource) {
                 case 'activities':
-                    // res = await pepperi.api.activities.search({
-                    //     fields: ['UUID', 'StatusName', 'CreationDateTime'],
-                    //     filter: filterObj,
-                    //     sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                    //     pageSize: 100
-                    // });
-
                     if (resourceObj.objects?.length) {
                         const stepActivities = resourceObj.objects.filter(activityObj => {
                             let res = false;
                             if (activityObj) {
-                                if (resourceCreationData === activityObj.Type && activityObj.CreationDateTime >= startDateTime) {
+                                if (resourceCreationData === activityObj.Type) {
                                     res = true;
                                 }
                             }
@@ -486,18 +462,11 @@ class VisitFlowService {
                     }
                     break;
                 case 'transactions':
-                    // res = await pepperi.api.transactions.search({
-                    //     fields: ['UUID', 'StatusName', 'CreationDateTime'],
-                    //     filter: filterObj,
-                    //     sorting: [{ Field: 'CreationDateTime', Ascending: false }],
-                    //     pageSize: 100
-                    // });
-
                     if (resourceObj.objects?.length) {
                         const stepTransactions = resourceObj.objects.filter(transactionObj => {
                             let res = false;
                             if (transactionObj) {
-                                if (transactionObj === transactionObj.Type && transactionObj.CreationDateTime >= startDateTime) {
+                                if (resourceCreationData === transactionObj.Type) {
                                     res = true;
                                 }
                             }
@@ -506,14 +475,9 @@ class VisitFlowService {
                         items = stepTransactions;
                     }
                     break;
-                default:
-                    /*res = await pepperi.resources.resource(resource).search({
-                        Fields: ['Key', 'StatusName', 'CreationDateTime', 'Account'],
-                        Where: `Template='${resourceCreationData}' And Creator = '${user.uuid}' And Account='${this._accountUUID}' And CreationDateTime >= '${startDateTime}'`
-
-                    });*/
+                case 'MySurveys':
                     if (resourceObj?.Objects?.length) {
-                        let templates: any[] = resourceObj.Objects.filter(survey => (survey.CreationDateTime >= startDateTime && survey.Template == 'resourceCreationData'));
+                        let templates: any[] = resourceObj.Objects.filter(survey => (survey.Template == resourceCreationData));
                         if (templates.length) {
                             templates.sort((a, b) => {
                                 if (a.CreationDateTime > b.CreationDateTime) {
@@ -533,6 +497,8 @@ class VisitFlowService {
 
                         }
                     }
+                    break;
+                default:
                     break;
             }
 
